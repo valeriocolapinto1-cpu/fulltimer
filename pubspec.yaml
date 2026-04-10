@@ -1,0 +1,39 @@
+name: speedcube_timer
+description: Professional WCA Speedcubing Timer
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management
+  provider: ^6.1.1
+  # Storage
+  shared_preferences: ^2.2.2
+  # Firebase
+  firebase_core: ^4.6.0
+  firebase_auth: ^6.3.0
+  cloud_firestore: ^6.2.0
+  # Auth
+  google_sign_in: ^7.2.0
+  flutter_web_auth_2: ^5.0.1
+  # Networking
+  http: ^1.2.1
+  # Utils
+  uuid: ^4.3.3
+  google_fonts: ^8.0.2
+  share_plus: ^13.0.0
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+   # - assets/images/
