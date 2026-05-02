@@ -19,7 +19,7 @@ class TimerDisplay extends StatelessWidget {
     required this.inspectionSecondsLeft,
     required this.isInspectionWarning,
     required this.accentColor,
-    this.displayMode = TimerDisplayMode.full,
+    this.displayMode = TimerDisplayMode.withDecimals,
   });
 
   @override
@@ -39,45 +39,43 @@ class TimerDisplay extends StatelessWidget {
     final color = _color(theme);
     final timeStr = _formatTime();
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        if (state == TimerState.idle || state == TimerState.stopped)
-          Padding(padding: const EdgeInsets.only(bottom: 10),
-            child: Text(
-              state == TimerState.idle ? 'Tieni premuto per iniziare' : 'Tocca per un nuovo solve',
-              style: theme.textTheme.bodyMedium)),
-        Text(timeStr,
-          style: GoogleFonts.nunito(
-            fontSize: _fontSize(timeStr), color: color,
-            fontWeight: FontWeight.w200, letterSpacing: -2)),
-        if (state == TimerState.holding)
-          Padding(padding: const EdgeInsets.only(top: 8),
-            child: Text('Continua a tenere...', style: theme.textTheme.bodyMedium)),
-        if (state == TimerState.ready)
-          Padding(padding: const EdgeInsets.only(top: 8),
-            child: Text('Rilascia per iniziare',
-              style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF30D158)))),
-      ]);
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      if (state == TimerState.idle || state == TimerState.stopped)
+        Padding(padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            state == TimerState.idle ? 'Tieni premuto per iniziare' : 'Tocca per un nuovo solve',
+            style: theme.textTheme.bodyMedium)),
+      Text(timeStr,
+        style: GoogleFonts.nunito(
+          fontSize: _fontSize(timeStr), color: color,
+          fontWeight: FontWeight.w200, letterSpacing: -2)),
+      if (state == TimerState.holding)
+        Padding(padding: const EdgeInsets.only(top: 8),
+          child: Text('Continua a tenere...', style: theme.textTheme.bodyMedium)),
+      if (state == TimerState.ready)
+        Padding(padding: const EdgeInsets.only(top: 8),
+          child: Text('Rilascia per iniziare',
+            style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF30D158)))),
+    ]);
   }
 
   String _formatTime() {
-    if (displayMode == TimerDisplayMode.hidden && state == TimerState.running) return '⬤ ⬤ ⬤';
-    if (elapsedMs == 0) return '0.00';
+    if (elapsedMs == 0 && state != TimerState.running) return '0.00';
     if (state == TimerState.running) {
       switch (displayMode) {
-        case TimerDisplayMode.hidden:          return '⬤ ⬤ ⬤';
-        case TimerDisplayMode.withoutDecimals: return _formatNoDecimals(elapsedMs);
-        case TimerDisplayMode.withDecimals:    return SolveTime.format(elapsedMs);
-        case TimerDisplayMode.full:
-          // Show decimals only under 10s
-          return elapsedMs < 10000 ? SolveTime.format(elapsedMs) : _formatNoDecimals(elapsedMs);
+        case TimerDisplayMode.hidden:
+          return '⬤ ⬤ ⬤';
+        case TimerDisplayMode.withoutDecimals:
+          return _noDecimals(elapsedMs);
+        case TimerDisplayMode.withDecimals:
+          // Show decimals under 10s only for readability
+          return elapsedMs < 10000 ? SolveTime.format(elapsedMs) : _noDecimals(elapsedMs);
       }
     }
     return SolveTime.format(elapsedMs);
   }
 
-  String _formatNoDecimals(int ms) {
+  String _noDecimals(int ms) {
     final s = ms ~/ 1000, m = s ~/ 60;
     return m > 0 ? '$m:${(s%60).toString().padLeft(2,'0')}' : '$s';
   }

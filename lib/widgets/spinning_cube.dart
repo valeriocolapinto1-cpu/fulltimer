@@ -1,18 +1,17 @@
-// ignore_for_file: constant_identifier_names
-
 import 'dart:math';
 import 'package:flutter/material.dart';
 
 // WCA standard colors
-const _W = Color(0xFFFAFAFA); // White  - U face
-const _Y = Color(0xFFFFD500); // Yellow - D face
-const _R = Color(0xFFBA0C2F); // Red    - F face
-const _O = Color(0xFFFF5800); // Orange - B face
-const _G = Color(0xFF009B48); // Green  - R face
-const _B = Color(0xFF003DA5); // Blue   - L face
-const _K = Color(0xFF111111); // Edge black
+const _W = Color(0xFFFAFAFA);
+const _Y = Color(0xFFFFD500);
+const _R = Color(0xFFBA0C2F);
+const _O = Color(0xFFFF5800);
+const _G = Color(0xFF009B48);
+const _B = Color(0xFF003DA5);
+const _K = Color(0xFF111111);
+const _Pk = Color(0xFFFF69B4);
+const _Pu = Color(0xFF9B59B6);
 
-// WCA face order: [U, F, R, D, B, L]
 const _wcaColors = <String, List<Color>>{
   '3x3':  [_W, _R, _G, _Y, _O, _B],
   'oh':   [_W, _R, _G, _Y, _O, _B],
@@ -30,8 +29,7 @@ Widget eventCube(String eventId, {double size = 26}) {
   if (eventId == 'clock') return _ClockSpinner(key: ValueKey('clock_$size'), size: size);
   if (eventId == 'skewb') return _SkewbSpinner(key: ValueKey('skewb_$size'), size: size);
   final cols = _wcaColors[eventId] ?? _wcaColors['3x3']!;
-  final n = _gridN(eventId);
-  return _CubeSpinner(key: ValueKey('${eventId}_$size'), size: size, cols: cols, n: n);
+  return _CubeSpinner(key: ValueKey('${eventId}_$size'), size: size, cols: cols, n: _gridN(eventId));
 }
 
 int _gridN(String id) {
@@ -41,7 +39,6 @@ int _gridN(String id) {
   }
 }
 
-// ── Shared spin mixin ─────────────────────────────────────────
 mixin SpinMixin<T extends StatefulWidget> on State<T>, SingleTickerProviderStateMixin<T> {
   late final AnimationController spinCtrl;
   int get spinSeconds => 5;
@@ -52,7 +49,7 @@ mixin SpinMixin<T extends StatefulWidget> on State<T>, SingleTickerProviderState
   @override void dispose() { spinCtrl.dispose(); super.dispose(); }
 }
 
-// ── NxN Cube ──────────────────────────────────────────────────
+// ── NxN Cube ─────────────────────────────────────────────────
 class _CubeSpinner extends StatefulWidget {
   final double size; final List<Color> cols; final int n;
   const _CubeSpinner({super.key, required this.size, required this.cols, required this.n});
@@ -84,16 +81,12 @@ class _CubePainter extends CustomPainter {
   void _face(Canvas cv, List<Offset> pts, Color col) {
     if (!_front(pts)) return;
     final path = Path()..moveTo(pts[0].dx, pts[0].dy);
-    for (final p in pts.skip(1)) {
-      path.lineTo(p.dx, p.dy);
-    }
+    for (final p in pts.skip(1)) path.lineTo(p.dx, p.dy);
     path.close();
     cv.drawPath(path, Paint()..color = col);
     cv.drawPath(path, Paint()
       ..color = _K.withValues(alpha: 0.55)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.9
-      ..strokeJoin = StrokeJoin.round);
+      ..style = PaintingStyle.stroke..strokeWidth = 0.9..strokeJoin = StrokeJoin.round);
     if (n > 1) {
       final gp = Paint()..color = _K.withValues(alpha: 0.22)..strokeWidth = 0.45;
       for (int i = 1; i < n; i++) {
@@ -110,7 +103,6 @@ class _CubePainter extends CustomPainter {
       _p(-1, 1,-1,s,cx,cy), _p(1, 1,-1,s,cx,cy), _p(1,-1,-1,s,cx,cy), _p(-1,-1,-1,s,cx,cy),
       _p(-1, 1, 1,s,cx,cy), _p(1, 1, 1,s,cx,cy), _p(1,-1, 1,s,cx,cy), _p(-1,-1, 1,s,cx,cy),
     ];
-    // U, F, R, D, B, L
     final faces = [
       ([v[4],v[5],v[1],v[0]], c[0]),
       ([v[0],v[1],v[2],v[3]], c[1]),
@@ -124,14 +116,14 @@ class _CubePainter extends CustomPainter {
       final db = b.$1.map((p)=>p.dy).reduce((x,y)=>x+y);
       return db.compareTo(da);
     });
-    for (final f in faces) {
-      _face(cv, f.$1, f.$2);
-    }
+    for (final f in faces) _face(cv, f.$1, f.$2);
   }
   @override bool shouldRepaint(_CubePainter o) => o.a != a;
 }
 
-// ── Skewb: cube shape with diagonal cuts on each face ────────
+// ── Skewb: cube body with 8 large corner pieces ───────────────
+// Real Skewb: looks like a cube but each face has 1 center + 4 corner triangles
+// The cuts go diagonally from one corner to the opposite corner
 class _SkewbSpinner extends StatefulWidget {
   final double size;
   const _SkewbSpinner({super.key, required this.size});
@@ -147,69 +139,69 @@ class _SkewbSpinnerState extends State<_SkewbSpinner>
 }
 
 class _SkewbPainter extends CustomPainter {
-  final double a; _SkewbPainter(this.a);
+  final double a;
+  _SkewbPainter(this.a);
 
   Offset _p(double x, double y, double z, double s, double cx, double cy) {
-    final ca=cos(a), sa=sin(a), rx=x*ca-z*sa, rz=x*sa+z*ca;
+    final ca = cos(a), sa = sin(a);
+    final rx = x*ca - z*sa, rz = x*sa + z*ca;
     return Offset(rx*cos(0.42)*s+cx, (-y*0.88-rz*sin(0.33))*s+cy);
   }
 
   bool _front(List<Offset> pts) {
-    final v1=pts[1]-pts[0], v2=pts[2]-pts[0];
+    final v1 = pts[1]-pts[0], v2 = pts[2]-pts[0];
     return v1.dx*v2.dy - v1.dy*v2.dx < 0;
   }
 
-  void _tri(Canvas cv, Offset p0, Offset p1, Offset p2, Color col) {
-    final path = Path()..moveTo(p0.dx,p0.dy)..lineTo(p1.dx,p1.dy)..lineTo(p2.dx,p2.dy)..close();
-    cv.drawPath(path, Paint()..color = col);
-    cv.drawPath(path, Paint()..color=_K.withValues(alpha:0.45)..style=PaintingStyle.stroke..strokeWidth=0.7);
-  }
-
-  void _skewbFace(Canvas cv, List<Offset> pts, Color centerCol, Color cornerCol) {
-    if (!_front(pts)) return;
-    // Center: rotated square connecting edge midpoints
-    final m = [
-      Offset((pts[0].dx+pts[1].dx)/2, (pts[0].dy+pts[1].dy)/2),
-      Offset((pts[1].dx+pts[2].dx)/2, (pts[1].dy+pts[2].dy)/2),
-      Offset((pts[2].dx+pts[3].dx)/2, (pts[2].dy+pts[3].dy)/2),
-      Offset((pts[3].dx+pts[0].dx)/2, (pts[3].dy+pts[0].dy)/2),
-    ];
-    // Center square
-    final cp = Path()..moveTo(m[0].dx,m[0].dy)..lineTo(m[1].dx,m[1].dy)
-        ..lineTo(m[2].dx,m[2].dy)..lineTo(m[3].dx,m[3].dy)..close();
-    cv.drawPath(cp, Paint()..color=centerCol);
-    cv.drawPath(cp, Paint()..color=_K.withValues(alpha:0.45)..style=PaintingStyle.stroke..strokeWidth=0.7);
-    // 4 corner triangles
-    for (int i=0;i<4;i++) {
-      _tri(cv, pts[i], m[i], m[(i+3)%4], cornerCol.withValues(alpha:0.82));
+  void _drawPoly(Canvas cv, List<Offset> pts, Color col) {
+    if (pts.length >= 3) {
+      // backface cull using first 3 points
+      final v1 = pts[1]-pts[0], v2 = pts[2]-pts[0];
+      if (v1.dx*v2.dy - v1.dy*v2.dx > 0) return;
     }
+    final path = Path()..moveTo(pts[0].dx, pts[0].dy);
+    for (final p in pts.skip(1)) path.lineTo(p.dx, p.dy);
+    path.close();
+    cv.drawPath(path, Paint()..color = col);
+    cv.drawPath(path, Paint()..color=_K.withValues(alpha:0.5)..style=PaintingStyle.stroke..strokeWidth=0.8);
   }
 
-  @override
-  void paint(Canvas cv, Size sz) {
-    final s=sz.width*0.37, cx=sz.width/2, cy=sz.height*0.54;
+  // Draw one face split into center diamond + 4 corner triangles
+  void _skewbFace(Canvas cv, Offset tl, Offset tr, Offset br, Offset bl,
+      Color center, Color c1, Color c2, Color c3, Color c4) {
+    if (!_front([tl,tr,br,bl])) return;
+    // Midpoints of each edge
+    final mt = Offset((tl.dx+tr.dx)/2, (tl.dy+tr.dy)/2);
+    final mr = Offset((tr.dx+br.dx)/2, (tr.dy+br.dy)/2);
+    final mb = Offset((br.dx+bl.dx)/2, (br.dy+bl.dy)/2);
+    final ml = Offset((bl.dx+tl.dx)/2, (bl.dy+tl.dy)/2);
+    // Center diamond (rotated square)
+    _drawPoly(cv, [mt,mr,mb,ml], center);
+    // 4 corner triangles
+    _drawPoly(cv, [tl,mt,ml], c1);
+    _drawPoly(cv, [tr,mr,mt], c2);
+    _drawPoly(cv, [br,mb,mr], c3);
+    _drawPoly(cv, [bl,ml,mb], c4);
+  }
+
+  @override void paint(Canvas cv, Size sz) {
+    final s = sz.width*0.37, cx = sz.width/2, cy = sz.height*0.54;
     final v = [
       _p(-1, 1,-1,s,cx,cy), _p(1, 1,-1,s,cx,cy), _p(1,-1,-1,s,cx,cy), _p(-1,-1,-1,s,cx,cy),
       _p(-1, 1, 1,s,cx,cy), _p(1, 1, 1,s,cx,cy), _p(1,-1, 1,s,cx,cy), _p(-1,-1, 1,s,cx,cy),
     ];
-    final faces = [
-      ([v[4],v[5],v[1],v[0]], _W, _G), // U: white center, green corners
-      ([v[0],v[1],v[2],v[3]], _R, _Y), // F: red center, yellow corners
-      ([v[1],v[5],v[6],v[2]], _G, _W), // R: green center, white corners
-    ];
-    faces.sort((fa,fb) {
-      final da = fa.$1.map((p)=>p.dy).reduce((x,y)=>x+y);
-      final db = fb.$1.map((p)=>p.dy).reduce((x,y)=>x+y);
-      return db.compareTo(da);
-    });
-    for (final f in faces) {
-      _skewbFace(cv, f.$1, f.$2, f.$3);
-    }
+    // U face: white center, corners cycle through adjacent colors
+    _skewbFace(cv, v[4],v[5],v[1],v[0], _W, _G,_B,_R,_O);
+    // F face: red center
+    _skewbFace(cv, v[0],v[1],v[2],v[3], _R, _W,_G,_Y,_B);
+    // R face: green center
+    _skewbFace(cv, v[1],v[5],v[6],v[2], _G, _W,_O,_Y,_R);
   }
   @override bool shouldRepaint(_SkewbPainter o) => o.a != a;
 }
 
-// ── Megaminx: Dodecahedron ────────────────────────────────────
+// ── Megaminx: Dodecahedron with 12 pentagonal faces ───────────
+// Correct geometry: 12 faces, each pentagon with 5 triangular sectors around center
 class _MegaSpinner extends StatefulWidget {
   final double size;
   const _MegaSpinner({super.key, required this.size});
@@ -217,7 +209,7 @@ class _MegaSpinner extends StatefulWidget {
 }
 class _MegaSpinnerState extends State<_MegaSpinner>
     with SingleTickerProviderStateMixin, SpinMixin {
-  @override int get spinSeconds => 7;
+  @override int get spinSeconds => 8;
   @override Widget build(BuildContext context) => AnimatedBuilder(
     animation: spinCtrl,
     builder: (_, __) => SizedBox(width: widget.size, height: widget.size,
@@ -225,69 +217,80 @@ class _MegaSpinnerState extends State<_MegaSpinner>
 }
 
 class _MegaPainter extends CustomPainter {
-  final double a; _MegaPainter(this.a);
+  final double a;
+  _MegaPainter(this.a);
 
-  static const _faceColors = [_W, _R, _B, _Y, _G, _O, _R, _G, _W, _B, _Y, _O];
+  // WCA Megaminx face colors (12 faces)
+  static const _megaFaceColors = [
+    _W,   // 0: top
+    _R,   // 1: front
+    _B,   // 2: front-right
+    _Pu,  // 3: right
+    _Pk,  // 4: back-right
+    _O,   // 5: back
+    _Y,   // 6: bottom
+    _G,   // 7: front-bottom
+    _B,   // 8
+    _R,   // 9
+    _G,   // 10
+    _W,   // 11
+  ];
 
-  // Generate a regular pentagon centered at (cx,cy) with given radius and start angle
-  List<Offset> _penta(double cx, double cy, double r, double startA) =>
-    List.generate(5, (i) => Offset(
-      cx + cos(startA + i * 2 * pi / 5) * r,
-      cy + sin(startA + i * 2 * pi / 5) * r));
+  // Generate pentagon vertices
+  List<Offset> _penta(double cx, double cy, double r, double startAngle) =>
+    List.generate(5, (i) {
+      final phi = startAngle + i * 2 * pi / 5;
+      return Offset(cx + cos(phi)*r, cy + sin(phi)*r);
+    });
 
-  void _drawPenta(Canvas cv, List<Offset> pts, Color col) {
+  void _drawPenta(Canvas cv, List<Offset> pts, Color col, {double edgeAlpha = 0.45}) {
     final path = Path()..moveTo(pts[0].dx, pts[0].dy);
-    for (final p in pts.skip(1)) {
-      path.lineTo(p.dx, p.dy);
-    }
+    for (final p in pts.skip(1)) path.lineTo(p.dx, p.dy);
     path.close();
     cv.drawPath(path, Paint()..color = col);
-    cv.drawPath(path, Paint()..color=_K.withValues(alpha:0.42)..style=PaintingStyle.stroke..strokeWidth=0.8);
+    cv.drawPath(path, Paint()
+      ..color = _K.withValues(alpha: edgeAlpha)
+      ..style = PaintingStyle.stroke..strokeWidth = 0.9);
+    // Draw inner star pattern (megaminx has pieces inside each face)
+    final cx2 = pts.map((p)=>p.dx).reduce((a,b)=>a+b)/5;
+    final cy2 = pts.map((p)=>p.dy).reduce((a,b)=>a+b)/5;
+    final innerR = sqrt(pow(pts[0].dx-cx2,2)+pow(pts[0].dy-cy2,2)) * 0.45;
+    final ep = Paint()..color=_K.withValues(alpha:0.18)..strokeWidth=0.5..style=PaintingStyle.stroke;
+    for (int i=0;i<5;i++) {
+      cv.drawLine(Offset(cx2,cy2), pts[i], ep);
+    }
   }
 
-  @override
-  void paint(Canvas cv, Size sz) {
+  @override void paint(Canvas cv, Size sz) {
     final cx = sz.width/2, cy = sz.height/2;
-    final R  = sz.width * 0.44;
-    final r  = R * 0.55; // inner pentagon
+    final R = sz.width * 0.44;
+    final faceR = R * 0.52;
 
-    // Draw back faces first (visible from below/side)
-    // Top pentagon (U face - White)
+    // Top face
     final topAngle = a - pi/2;
-    final topPts = _penta(cx, cy - R*0.12, r, topAngle);
-    _drawPenta(cv, topPts, _faceColors[0]);
+    final topPts = _penta(cx, cy - R*0.14, faceR, topAngle);
+    _drawPenta(cv, topPts, _megaFaceColors[0]);
 
-    // 5 upper surrounding faces with proper 3D tilt
-    for (int i = 0; i < 5; i++) {
-      final edgeAngle = topAngle + i*2*pi/5 + pi/5;
-      // Project center of each surrounding face
-      final faceCx = cx + cos(edgeAngle) * R * 0.68;
-      final faceCy = cy - R*0.12 + sin(edgeAngle) * R * 0.5;
-      // Size shrinks with depth
-      final depth = (sin(edgeAngle - a) + 1) / 2;
-      final faceR = r * (0.7 + depth * 0.12);
-      final faceA = edgeAngle + pi/5 + a * 0.15;
-      final facePts = _penta(faceCx, faceCy, faceR, faceA);
-      // Only draw if facing viewer
-      _drawPenta(cv, facePts, _faceColors[1 + i]);
-    }
-
-    // Lower partial faces (bottom ring, partially visible)
-    for (int i = 0; i < 3; i++) {
-      final edgeAngle = topAngle + pi + i*2*pi/3;
-      final faceCx = cx + cos(edgeAngle) * R * 0.52;
-      final faceCy = cy + R*0.3 + sin(edgeAngle) * R * 0.32;
-      if (faceCy > cy + R * 0.1) {
-        final faceR = r * 0.55;
-        final facePts = _penta(faceCx, faceCy, faceR, edgeAngle + a*0.1);
-        _drawPenta(cv, facePts, _faceColors[6 + i].withValues(alpha: 0.75));
-      }
+    // 5 upper surrounding faces
+    for (int i=0;i<5;i++) {
+      final edgeAngle = topAngle + pi/5 + i*2*pi/5;
+      // Share edge with top face
+      final p1 = topPts[i];
+      final p2 = topPts[(i+1)%5];
+      final edgeMidX = (p1.dx+p2.dx)/2, edgeMidY = (p1.dy+p2.dy)/2;
+      // Face center: project outward from edge midpoint
+      final outAngle = edgeAngle;
+      final fcx = edgeMidX + cos(outAngle)*faceR*1.05;
+      final fcy = edgeMidY + sin(outAngle)*faceR*0.72;
+      final faceAngle = outAngle + pi/5 + a*0.08;
+      final facePts = _penta(fcx, fcy, faceR*0.85, faceAngle);
+      _drawPenta(cv, facePts, _megaFaceColors[1+i].withValues(alpha: 0.92));
     }
   }
   @override bool shouldRepaint(_MegaPainter o) => o.a != a;
 }
 
-// ── Pyraminx: Tetrahedron ────────────────────────────────────
+// ── Pyraminx: Tetrahedron ─────────────────────────────────────
 class _PyraSpinner extends StatefulWidget {
   final double size;
   const _PyraSpinner({super.key, required this.size});
@@ -302,15 +305,15 @@ class _PyraSpinnerState extends State<_PyraSpinner>
 }
 
 class _PyraPainter extends CustomPainter {
-  final double a; _PyraPainter(this.a);
+  final double a;
+  _PyraPainter(this.a);
 
   Offset _p(double x, double y, double z, double s, double cx, double cy) {
     final ca=cos(a), sa=sin(a), rx=x*ca-z*sa, rz=x*sa+z*ca;
     return Offset(rx*0.92*s+cx, (-y-rz*0.42)*s+cy);
   }
 
-  @override
-  void paint(Canvas cv, Size sz) {
+  @override void paint(Canvas cv, Size sz) {
     final s=sz.width*0.40, cx=sz.width/2, cy=sz.height*0.62;
     final apex = _p(0, 1.3, 0, s, cx, cy);
     final bl   = _p(-1,-0.43,-0.577,s,cx,cy);
@@ -339,7 +342,8 @@ class _PyraPainter extends CustomPainter {
   @override bool shouldRepaint(_PyraPainter o) => o.a != a;
 }
 
-// ── Clock: disc with dials and pins ──────────────────────────
+// ── Clock: disc with 9 clock faces and 4 corner pins ─────────
+// Correct geometry: flat disc with 3x3 grid of clock dials + 4 corner pins
 class _ClockSpinner extends StatefulWidget {
   final double size;
   const _ClockSpinner({super.key, required this.size});
@@ -347,7 +351,7 @@ class _ClockSpinner extends StatefulWidget {
 }
 class _ClockSpinnerState extends State<_ClockSpinner>
     with SingleTickerProviderStateMixin, SpinMixin {
-  @override int get spinSeconds => 8;
+  @override int get spinSeconds => 10;
   @override Widget build(BuildContext context) => AnimatedBuilder(
     animation: spinCtrl,
     builder: (_, __) => SizedBox(width: widget.size, height: widget.size,
@@ -355,44 +359,60 @@ class _ClockSpinnerState extends State<_ClockSpinner>
 }
 
 class _ClockPainter extends CustomPainter {
-  final double t; _ClockPainter(this.t);
-  @override
-  void paint(Canvas cv, Size sz) {
-    final cx=sz.width/2, cy=sz.height/2, R=sz.width*0.46;
-    // Outer body (grey disc)
-    cv.drawCircle(Offset(cx,cy), R, Paint()..color=const Color(0xFF9E9E9E));
-    cv.drawCircle(Offset(cx,cy), R, Paint()..color=_K.withValues(alpha:0.5)..style=PaintingStyle.stroke..strokeWidth=sz.width*0.06);
-    // 4 pins at corners
-    for (int i=0;i<4;i++) {
-      final phi = pi/4 + i*pi/2;
-      final px = cx + cos(phi)*R*0.72, py = cy + sin(phi)*R*0.72;
-      final isUp = (i+t.floor())%2==0;
-      cv.drawCircle(Offset(px,py), sz.width*0.072,
-          Paint()..color=isUp?const Color(0xFFEEEEEE):const Color(0xFF555555));
-      cv.drawCircle(Offset(px,py), sz.width*0.072,
-          Paint()..color=_K.withValues(alpha:0.4)..style=PaintingStyle.stroke..strokeWidth=0.7);
-    }
-    // Clock face
-    final faceR = R*0.52;
-    cv.drawCircle(Offset(cx,cy), faceR, Paint()..color=_W);
-    cv.drawCircle(Offset(cx,cy), faceR, Paint()..color=_K.withValues(alpha:0.3)..style=PaintingStyle.stroke..strokeWidth=0.7);
-    // 12 hour markers
+  final double t;
+  _ClockPainter(this.t);
+
+  void _drawDial(Canvas cv, Offset center, double r, double handAngle) {
+    // Dial background
+    cv.drawCircle(center, r, Paint()..color=const Color(0xFFF0F0F0));
+    cv.drawCircle(center, r, Paint()..color=_B.withValues(alpha:0.15)..style=PaintingStyle.stroke..strokeWidth=r*0.15);
+    // 12 hour dots
     for (int i=0;i<12;i++) {
       final phi = i*2*pi/12 - pi/2;
-      cv.drawLine(Offset(cx+cos(phi)*faceR*0.78, cy+sin(phi)*faceR*0.78),
-                  Offset(cx+cos(phi)*faceR*0.94, cy+sin(phi)*faceR*0.94),
-          Paint()..color=_K.withValues(alpha:0.35)..strokeWidth=0.6);
+      final dotR = r*0.08;
+      final dotPos = Offset(center.dx+cos(phi)*r*0.82, center.dy+sin(phi)*r*0.82);
+      cv.drawCircle(dotPos, dotR, Paint()..color=_K.withValues(alpha:0.4));
     }
-    // Minute hand
-    final mA = t*2*pi - pi/2;
-    cv.drawLine(Offset(cx,cy), Offset(cx+cos(mA)*faceR*0.66, cy+sin(mA)*faceR*0.66),
-        Paint()..color=_K..strokeWidth=sz.width*0.035..strokeCap=StrokeCap.round);
-    // Hour hand
-    final hA = t*2*pi*0.5 - pi/2;
-    cv.drawLine(Offset(cx,cy), Offset(cx+cos(hA)*faceR*0.42, cy+sin(hA)*faceR*0.42),
-        Paint()..color=_K..strokeWidth=sz.width*0.058..strokeCap=StrokeCap.round);
-    // Center
-    cv.drawCircle(Offset(cx,cy), sz.width*0.04, Paint()..color=_K);
+    // Hour hand (blue like real WCA clock)
+    cv.drawLine(center, Offset(center.dx+cos(handAngle)*r*0.65, center.dy+sin(handAngle)*r*0.65),
+        Paint()..color=_B..strokeWidth=r*0.2..strokeCap=StrokeCap.round);
+    // Center dot
+    cv.drawCircle(center, r*0.1, Paint()..color=_K.withValues(alpha:0.6));
+  }
+
+  @override void paint(Canvas cv, Size sz) {
+    final cx=sz.width/2, cy=sz.height/2;
+    final discR = sz.width*0.47;
+
+    // Outer disc (blue body like reference image)
+    cv.drawCircle(Offset(cx,cy), discR, Paint()..color=_B);
+    cv.drawCircle(Offset(cx,cy), discR, Paint()..color=_K.withValues(alpha:0.5)..style=PaintingStyle.stroke..strokeWidth=sz.width*0.05);
+
+    // 9 clock dials in 3x3 grid
+    final dialR = discR * 0.28;
+    final spacing = discR * 0.62;
+    for (int row=0;row<3;row++) {
+      for (int col=0;col<3;col++) {
+        final dx = cx + (col-1)*spacing;
+        final dy = cy + (row-1)*spacing;
+        // Each dial has different hand angle (simulating scrambled state)
+        final handAngle = t*2*pi + (row*3+col)*pi/4 - pi/2;
+        _drawDial(cv, Offset(dx,dy), dialR, handAngle);
+      }
+    }
+
+    // 4 corner pins (white cylindrical buttons)
+    final pinDist = discR * 0.76;
+    for (int i=0;i<4;i++) {
+      final phi = pi/4 + i*pi/2;
+      final px = cx + cos(phi)*pinDist;
+      final py = cy + sin(phi)*pinDist;
+      final isUp = ((t * 2).floor() + i) % 2 == 0;
+      cv.drawCircle(Offset(px,py), sz.width*0.065,
+          Paint()..color = isUp ? const Color(0xFFEEEEEE) : const Color(0xFF888888));
+      cv.drawCircle(Offset(px,py), sz.width*0.065,
+          Paint()..color=_K.withValues(alpha:0.4)..style=PaintingStyle.stroke..strokeWidth=0.8);
+    }
   }
   @override bool shouldRepaint(_ClockPainter o) => o.t != t;
 }

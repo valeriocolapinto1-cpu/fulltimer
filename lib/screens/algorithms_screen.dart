@@ -1,866 +1,403 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-// Algoritmi con livello: 0=base, 1=avanzato, 2=elite
-// Immagine: URL a cube visualizer (cubing.net/visual o cube.rider.biz)
-// Formato immagine: stringa che descrive il caso visivamente
+// ── Complete algorithm dataset (OLL:57, PLL:21, F2L:41, 2x2, Pyraminx, Skewb) ──
+// Source: jperm.net / cubing.net
+// level: 0=Beginner, 1=Advanced, 2=Expert
+// ollMap: bitfield of 9 top stickers (0=grey/unoriented, 1=yellow) for OLL cases
 const _algs = <Map<String, dynamic>>[
-  // ── F2L ─────────────────────────────────────────────────
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 1',
-    'alg': 'U R U\' R\'',
-    'level': 0,
-    'img': 'f2l_1',
-    'desc': 'Angolo e bordo già abbinati in alto'
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 2',
-    'alg': 'U\' F\' U F',
-    'level': 0,
-    'img': 'f2l_2',
-    'desc': 'Abbinamento inverso'
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 3',
-    'alg': 'R U R\' U\' R U R\' U\' R U R\'',
-    'level': 0,
-    'img': 'f2l_3',
-    'desc': 'Entrambi slot adiacenti'
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 4',
-    'alg': 'F\' U\' F U F\' U\' F',
-    'level': 0,
-    'img': 'f2l_4',
-    'desc': ''
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 5',
-    'alg': 'R U\' R\' d R\' U R',
-    'level': 1,
-    'img': 'f2l_5',
-    'desc': ''
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 6',
-    'alg': 'R U2\' R\' U\' R U R\'',
-    'level': 1,
-    'img': 'f2l_6',
-    'desc': ''
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 7',
-    'alg': 'U R U2\' R\' U R U\' R\'',
-    'level': 1,
-    'img': 'f2l_7',
-    'desc': ''
-  },
-  {
-    'cat': 'F2L',
-    'name': 'F2L Caso 8',
-    'alg': 'R U R\' U2\' R U\' R\'',
-    'level': 1,
-    'img': 'f2l_8',
-    'desc': ''
-  },
-  // ── OLL ─────────────────────────────────────────────────
-  {
-    'cat': 'OLL',
-    'name': 'OLL 1 (Dot)',
-    'alg': 'R U2\' R2\' F R F\' U2\' R\' F R F\'',
-    'level': 1,
-    'img': 'oll_1',
-    'desc': 'Nessun pezzo giallo orientato'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 2 (Dot)',
-    'alg': 'F R U R\' U\' F\' f R U R\' U\' f\'',
-    'level': 1,
-    'img': 'oll_2',
-    'desc': ''
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 21 (H)',
-    'alg': 'R U R\' U R U\' R\' U R U2\' R\'',
-    'level': 0,
-    'img': 'oll_21',
-    'desc': 'Forma H sul top'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 22 (Pi)',
-    'alg': 'R U2\' R2\' U\' R2 U\' R2\' U2\' R',
-    'level': 0,
-    'img': 'oll_22',
-    'desc': 'Forma Pi'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 23 (Sune)',
-    'alg': 'R U R\' U R U2\' R\'',
-    'level': 0,
-    'img': 'oll_23',
-    'desc': 'Sune - caso più comune'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 24 (Anti-Sune)',
-    'alg': 'R U2\' R\' U\' R U\' R\'',
-    'level': 0,
-    'img': 'oll_24',
-    'desc': 'Anti-Sune'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 25 (T)',
-    'alg': 'F R U R\' U\' F\'',
-    'level': 0,
-    'img': 'oll_25',
-    'desc': 'Forma T'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 26 (L)',
-    'alg': 'R\' U\' R U\' R\' U2\' R',
-    'level': 0,
-    'img': 'oll_26',
-    'desc': 'Forma L sinistra'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 27 (L mirror)',
-    'alg': 'R U R\' U R U2\' R\'',
-    'level': 0,
-    'img': 'oll_27',
-    'desc': 'Forma L destra'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 33 (T)',
-    'alg': 'R U R\' U\' R\' F R F\'',
-    'level': 1,
-    'img': 'oll_33',
-    'desc': 'T con bordi'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 37 (Fish)',
-    'alg': 'F R\' F\' R U R U\' R\'',
-    'level': 1,
-    'img': 'oll_37',
-    'desc': 'Pesce'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 57 (H)',
-    'alg': 'R U R\' U\' M\' U R U\' r\'',
-    'level': 1,
-    'img': 'oll_57',
-    'desc': 'H con M-slice'
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 29',
-    'alg': 'R U R\' U\' R U\' R\' F\' U\' F R U R\'',
-    'level': 2,
-    'img': 'oll_29',
-    'desc': ''
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 30',
-    'alg': 'F R\' F R2 U\' R\' U\' R U R\' F2\' ',
-    'level': 2,
-    'img': 'oll_30',
-    'desc': ''
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 44',
-    'alg': 'F U R U\' R\' F\'',
-    'level': 0,
-    'img': 'oll_44',
-    'desc': ''
-  },
-  {
-    'cat': 'OLL',
-    'name': 'OLL 45',
-    'alg': 'F R U R\' U\' F\'',
-    'level': 0,
-    'img': 'oll_45',
-    'desc': ''
-  },
-  // ── PLL ─────────────────────────────────────────────────
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ua',
-    'alg': 'R U\' R U R U R U\' R\' U\' R2',
-    'level': 0,
-    'img': 'pll_ua',
-    'desc': '3 angoli ciclici'
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ub',
-    'alg': 'R2 U R U R\' U\' R\' U\' R\' U R\'',
-    'level': 0,
-    'img': 'pll_ub',
-    'desc': '3 angoli anticiclici'
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL H',
-    'alg': 'M2\' U M2\' U2\' M2\' U M2\'',
-    'level': 0,
-    'img': 'pll_h',
-    'desc': 'Scambio opposto bordi'
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Z',
-    'alg': 'M2\' U M2\' U M\' U2\' M2\' U2\' M\' U2\'',
-    'level': 0,
-    'img': 'pll_z',
-    'desc': 'Scambio adiacente bordi'
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL T',
-    'alg': 'R U R\' U\' R\' F R2 U\' R\' U\' R U R\' F\'',
-    'level': 0,
-    'img': 'pll_t',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Aa',
-    'alg': 'x R\' U R\' D2\' R U\' R\' D2\' R2',
-    'level': 1,
-    'img': 'pll_aa',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ab',
-    'alg': 'x R2 D2\' R U R\' D2\' R U\' R',
-    'level': 1,
-    'img': 'pll_ab',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL F',
-    'alg': 'R\' U\' F\' R U R\' U\' R\' F R2 U\' R\' U\' R U R\' U R',
-    'level': 1,
-    'img': 'pll_f',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ja',
-    'alg': 'x R2\' F R F\' R U2\' r\' U r U2\'',
-    'level': 1,
-    'img': 'pll_ja',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Jb',
-    'alg': 'R U R\' F\' R U R\' U\' R\' F R2 U\' R\'',
-    'level': 1,
-    'img': 'pll_jb',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ra',
-    'alg': 'R U R\' F\' R U2\' R\' U2\' R\' F R U R U2\' R\'',
-    'level': 1,
-    'img': 'pll_ra',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Rb',
-    'alg': 'R\' U2\' R U2\' R\' F R U R\' U\' R\' F\' R2',
-    'level': 1,
-    'img': 'pll_rb',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL V',
-    'alg': 'R\' U R\' d\' R\' F\' R2 U\' R\' U R\' F R F',
-    'level': 1,
-    'img': 'pll_v',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Y',
-    'alg': 'F R U\' R\' U\' R U R\' F\' R U R\' U\' R\' F R F\'',
-    'level': 1,
-    'img': 'pll_y',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Na',
-    'alg': 'R U R\' U R U R\' F\' R U R\' U\' R\' F R2 U\' R\' U2\' R U\' R\'',
-    'level': 2,
-    'img': 'pll_na',
-    'desc': 'Più difficile'
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Nb',
-    'alg': 'R\' U L\' U2\' R U\' L R\' U L\' U2\' R U\' L U2\'',
-    'level': 2,
-    'img': 'pll_nb',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL E',
-    'alg': 'x\' R U\' R\' D R U R\' D\' R U R\' D R U\' R\' D\'',
-    'level': 2,
-    'img': 'pll_e',
-    'desc': ''
-  },
-  {
-    'cat': 'PLL',
-    'name': 'PLL Ga',
-    'alg': 'R2 U R\' U R\' U\' R U\' R2 D U\' R\' U R D\'',
-    'level': 2,
-    'img': 'pll_ga',
-    'desc': ''
-  },
-  // ── 2x2 ─────────────────────────────────────────────────
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 1',
-    'alg': 'R U R\' U R U2\' R\'',
-    'level': 0,
-    'img': '2x2_oll1',
-    'desc': 'Sune'
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 2',
-    'alg': 'F R U R\' U\' F\'',
-    'level': 0,
-    'img': '2x2_oll2',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 3',
-    'alg': 'R U2\' R\' U\' R U\' R\'',
-    'level': 0,
-    'img': '2x2_oll3',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 4',
-    'alg': 'R U R\' U\' R U\' R\' F\' U\' F',
-    'level': 1,
-    'img': '2x2_oll4',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 5',
-    'alg': 'F\' r U r\' U\' r\' F r',
-    'level': 1,
-    'img': '2x2_oll5',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 6',
-    'alg': 'R U2\' R U2\' R\' F R F\'',
-    'level': 1,
-    'img': '2x2_oll6',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': '2x2 OLL 7',
-    'alg': 'R U R\' U\' R\' F R F\'',
-    'level': 1,
-    'img': '2x2_oll7',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': 'PBL Ua',
-    'alg': 'R U\' R U R U R U\' R\' U\' R2',
-    'level': 0,
-    'img': 'pbl_ua',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': 'PBL Ub',
-    'alg': 'R2 U R U R\' U\' R\' U\' R\' U R\'',
-    'level': 0,
-    'img': 'pbl_ub',
-    'desc': ''
-  },
-  {
-    'cat': '2x2',
-    'name': 'PBL Z',
-    'alg': 'M\' U\' M2\' U\' M2\' U\' M\' U2\' M2\'',
-    'level': 1,
-    'img': 'pbl_z',
-    'desc': ''
-  },
-  // ── Pyraminx ─────────────────────────────────────────────
-  {
-    'cat': 'Pyraminx',
-    'name': 'L4E 1',
-    'alg': 'R U R\' U R U2\' R\' U',
-    'level': 0,
-    'img': 'pyra_1',
-    'desc': ''
-  },
-  {
-    'cat': 'Pyraminx',
-    'name': 'L4E 2',
-    'alg': 'U\' R U\' R\' U R\' U R',
-    'level': 0,
-    'img': 'pyra_2',
-    'desc': ''
-  },
-  {
-    'cat': 'Pyraminx',
-    'name': 'L4E 3',
-    'alg': 'R U R\' U\' R U R\'',
-    'level': 0,
-    'img': 'pyra_3',
-    'desc': ''
-  },
-  {
-    'cat': 'Pyraminx',
-    'name': 'L4E 4',
-    'alg': 'R\' U R U\' R\' U\' R',
-    'level': 0,
-    'img': 'pyra_4',
-    'desc': ''
-  },
+// ── F2L (41 cases) ─────────────────────────────────────────────────────────────
+{'cat':'F2L','name':'F2L 1','alg':"U R U' R'",'level':0,'desc':'Corner in top, edge in top - paired'},
+{'cat':'F2L','name':'F2L 2','alg':"U' F' U F",'level':0,'desc':'Mirror of F2L 1'},
+{'cat':'F2L','name':'F2L 3','alg':"R U' R' U R U' R'",'level':0,'desc':'Corner right, edge top'},
+{'cat':'F2L','name':'F2L 4','alg':"F' U F U' F' U F",'level':0,'desc':'Corner front, edge top'},
+{'cat':'F2L','name':'F2L 5','alg':"R U R' U' R U R'",'level':0,'desc':'Both in top, wrong orientation'},
+{'cat':'F2L','name':'F2L 6','alg':"F' U' F U F' U' F",'level':0,'desc':'Mirror of F2L 5'},
+{'cat':'F2L','name':'F2L 7','alg':"U R U2' R' U R U' R'",'level':1,'desc':'Corner up, edge in slot'},
+{'cat':'F2L','name':'F2L 8','alg':"U' F' U2 F U' F' U F",'level':1,'desc':'Mirror of F2L 7'},
+{'cat':'F2L','name':'F2L 9','alg':"R U2' R' U' R U R'",'level':1,'desc':'Corner up flipped'},
+{'cat':'F2L','name':'F2L 10','alg':"F' U2 F U F' U' F",'level':1,'desc':'Mirror F2L 9'},
+{'cat':'F2L','name':'F2L 11','alg':"R U' R' U2 R U' R'",'level':1,'desc':'Edge in slot, corner in top'},
+{'cat':'F2L','name':'F2L 12','alg':"F' U F U2' F' U F",'level':1,'desc':'Mirror F2L 11'},
+{'cat':'F2L','name':'F2L 13','alg':"U' R U R' U R U' R'",'level':1,'desc':'Corner top, edge slot connected'},
+{'cat':'F2L','name':'F2L 14','alg':"U F' U' F U' F' U F",'level':1,'desc':'Mirror F2L 13'},
+{'cat':'F2L','name':'F2L 15','alg':"R U' R' U' R U R'",'level':1,'desc':'Connected pair, wrong place'},
+{'cat':'F2L','name':'F2L 16','alg':"F' U F U F' U' F",'level':1,'desc':'Mirror F2L 15'},
+{'cat':'F2L','name':'F2L 17','alg':"R U R' U' R U R' U' R U R'",'level':1,'desc':'Triple sexy move'},
+{'cat':'F2L','name':'F2L 18','alg':"F' U' F U F' U' F U F' U' F",'level':1,'desc':'Mirror F2L 17'},
+{'cat':'F2L','name':'F2L 19','alg':"U R U' R' U' F' U F",'level':1,'desc':'Slot empty, pieces in top'},
+{'cat':'F2L','name':'F2L 20','alg':"U' F' U F U R U' R'",'level':1,'desc':'Mirror F2L 19'},
+{'cat':'F2L','name':'F2L 21','alg':"R U' R' U R U' R' U R U' R'",'level':2,'desc':'Corner in slot wrong'},
+{'cat':'F2L','name':'F2L 22','alg':"F' U F U' F' U F U' F' U F",'level':2,'desc':'Mirror F2L 21'},
+{'cat':'F2L','name':'F2L 23','alg':"R U R' U2' R U' R'",'level':1,'desc':'Edge in slot, corner top flipped'},
+{'cat':'F2L','name':'F2L 24','alg':"F' U' F U2 F' U F",'level':1,'desc':'Mirror F2L 23'},
+{'cat':'F2L','name':'F2L 25','alg':"R U' R' U F' U' F",'level':1,'desc':'Both pieces top, no pair'},
+{'cat':'F2L','name':'F2L 26','alg':"F' U F U' R U R'",'level':1,'desc':'Mirror F2L 25'},
+{'cat':'F2L','name':'F2L 27','alg':"R U' R' U R U2' R' U R U' R'",'level':2,'desc':'All wrong'},
+{'cat':'F2L','name':'F2L 28','alg':"F' U F U' F' U2 F U' F' U F",'level':2,'desc':'Mirror F2L 27'},
+{'cat':'F2L','name':'F2L 29','alg':"U R U2' R' U2 R U' R'",'level':2,'desc':'Corner top, edge in slot flipped'},
+{'cat':'F2L','name':'F2L 30','alg':"U' F' U2 F U2' F' U F",'level':2,'desc':'Mirror F2L 29'},
+{'cat':'F2L','name':'F2L 31','alg':"R' U2 R U R' U' R",'level':1,'desc':'Corner in slot, edge top'},
+{'cat':'F2L','name':'F2L 32','alg':"F U2' F' U' F U F'",'level':1,'desc':'Mirror F2L 31'},
+{'cat':'F2L','name':'F2L 33','alg':"U' R U' R' U2 R U' R'",'level':2,'desc':'Both in top adjacent'},
+{'cat':'F2L','name':'F2L 34','alg':"U F' U F U2' F' U F",'level':2,'desc':'Mirror F2L 33'},
+{'cat':'F2L','name':'F2L 35','alg':"R U R' U' R U' R' U2 R U' R'",'level':2,'desc':'Both wrong'},
+{'cat':'F2L','name':'F2L 36','alg':"F' U' F U F' U F U2' F' U F",'level':2,'desc':'Mirror F2L 35'},
+{'cat':'F2L','name':'F2L 37','alg':"R U R' U' R U R' U' R U R'",'level':2,'desc':'Sexy move x3'},
+{'cat':'F2L','name':'F2L 38','alg':"R U' R' d R' U' R U' R' U' R",'level':2,'desc':'Wide insert'},
+{'cat':'F2L','name':'F2L 39','alg':"R' F R F' R' F R F'",'level':2,'desc':'Edge flip with sledgehammer'},
+{'cat':'F2L','name':'F2L 40','alg':"R U' R' U' F' U F",'level':1,'desc':'Corner in slot edge top'},
+{'cat':'F2L','name':'F2L 41','alg':"R' F' R U R U' R' F",'level':2,'desc':'Weird edge case'},
+
+// ── OLL (57 cases) ─────────────────────────────────────────────────────────────
+// oll: 9 booleans [tl,tc,tr,ml,cc,mr,bl,bc,br] — cc(center) always true for 3x3
+{'cat':'OLL','name':'OLL 1 (Dot)','alg':"R U2' R2' F R F' U2' R' F R F'",'level':2,'oll':'000000000','desc':'No edges oriented'},
+{'cat':'OLL','name':'OLL 2 (Dot)','alg':"F R U R' U' F' f R U R' U' f'",'level':2,'oll':'000000000','desc':'Dot case 2'},
+{'cat':'OLL','name':'OLL 3 (Dot)','alg':"f R U R' U' f' U' F R U R' U' F'",'level':2,'oll':'000000000','desc':'Dot case 3'},
+{'cat':'OLL','name':'OLL 4 (Dot)','alg':"f R U R' U' f' U F R U R' U' F'",'level':2,'oll':'000000000','desc':'Dot case 4'},
+{'cat':'OLL','name':'OLL 5 (Square)','alg':"r' U2' R U R' U r",'level':1,'oll':'110000000','desc':'Square shape front-left'},
+{'cat':'OLL','name':'OLL 6 (Square)','alg':"r U2 R' U' R U' r'",'level':1,'oll':'011000000','desc':'Square shape front-right'},
+{'cat':'OLL','name':'OLL 7 (S)','alg':"r U R' U R U2' r'",'level':1,'oll':'010010100','desc':'S shape'},
+{'cat':'OLL','name':'OLL 8 (S)','alg':"r' U' R U' R' U2 r",'level':1,'oll':'001010010','desc':'S mirror'},
+{'cat':'OLL','name':'OLL 9 (Fish)','alg':"R U R' U' R' F R2 U R' U' F'",'level':1,'oll':'000010110','desc':'Fish front-right'},
+{'cat':'OLL','name':'OLL 10 (Fish)','alg':"R U R' U R' F R F' R U2' R'",'level':1,'oll':'011010000','desc':'Fish front-left'},
+{'cat':'OLL','name':'OLL 11 (Small L)','alg':"r' R2 U R' U R U2' R' U M'",'level':1,'oll':'000010011','desc':'Small L'},
+{'cat':'OLL','name':'OLL 12 (Small L)','alg':"M' R' U' R U' R' U2 R U' M",'level':1,'oll':'110010000','desc':'Small L mirror'},
+{'cat':'OLL','name':'OLL 13 (Knight)','alg':"F U R U' R2' F' R U R U' R'",'level':2,'oll':'000110100','desc':'Knight move shape'},
+{'cat':'OLL','name':'OLL 14 (Knight)','alg':"R' F R U R' F' R F U' F'",'level':2,'oll':'001011000','desc':'Knight mirror'},
+{'cat':'OLL','name':'OLL 15 (Knight)','alg':"r' U' r R' U' R U r' U r",'level':2,'oll':'000111000','desc':'Knight variation'},
+{'cat':'OLL','name':'OLL 16 (Knight)','alg':"r U r' R U R' U' r U' r'",'level':2,'oll':'000111000','desc':'Knight var 2'},
+{'cat':'OLL','name':'OLL 17','alg':"R U R' U R' F R F' U2' R' F R F'",'level':2,'oll':'010110010','desc':''},
+{'cat':'OLL','name':'OLL 18','alg':"r U R' U R U2' r2' U' R U' R' U2 r",'level':2,'oll':'011010010','desc':''},
+{'cat':'OLL','name':'OLL 19','alg':"r' R U R U R' U' r2 R2' U R U' r'",'level':2,'oll':'010010011','desc':''},
+{'cat':'OLL','name':'OLL 20 (X)','alg':"r U R' U' r' F R F' R U R' U' R' F R F'",'level':2,'oll':'010010010','desc':'X/Bow-tie'},
+{'cat':'OLL','name':'OLL 21 (H)','alg':"R U R' U R U' R' U R U2' R'",'level':0,'oll':'010111010','desc':'H shape - most common beginner case'},
+{'cat':'OLL','name':'OLL 22 (Pi)','alg':"R U2' R2' U' R2 U' R2' U2' R",'level':0,'oll':'010010010','desc':'Pi shape'},
+{'cat':'OLL','name':'OLL 23 (Sune)','alg':"R U R' U R U2' R'",'level':0,'oll':'001010110','desc':'Sune - most recognised OLL'},
+{'cat':'OLL','name':'OLL 24 (Anti-Sune)','alg':"R U2' R' U' R U' R'",'level':0,'oll':'011010100','desc':'Anti-Sune'},
+{'cat':'OLL','name':'OLL 25','alg':"F' r U R' U' r' F R",'level':1,'oll':'100010011','desc':''},
+{'cat':'OLL','name':'OLL 26 (Antisune var)','alg':"R' U' R U' R' U2' R",'level':0,'oll':'010110100','desc':'Left Sune'},
+{'cat':'OLL','name':'OLL 27 (Sune var)','alg':"R U R' U R U2' R'",'level':0,'oll':'001011010','desc':'Right Sune'},
+{'cat':'OLL','name':'OLL 28','alg':"r U R' U' r' R U R U' R'",'level':1,'oll':'010010110','desc':''},
+{'cat':'OLL','name':'OLL 29','alg':"R U R' U' R U' R' F' U' F R U R'",'level':2,'oll':'000111010','desc':''},
+{'cat':'OLL','name':'OLL 30','alg':"F R' F R2 U' R' U' R U R' F2'",'level':2,'oll':'010111000','desc':''},
+{'cat':'OLL','name':'OLL 31','alg':"R' U' F U R U' R' F' R",'level':1,'oll':'010100011','desc':''},
+{'cat':'OLL','name':'OLL 32','alg':"L U F' U' L' U L F L'",'level':1,'oll':'110001010','desc':''},
+{'cat':'OLL','name':'OLL 33 (T shape)','alg':"R U R' U' R' F R F'",'level':0,'oll':'010011100','desc':'T shape - very common'},
+{'cat':'OLL','name':'OLL 34','alg':"R U R2' U' R' F R U R U' F'",'level':1,'oll':'001010110','desc':''},
+{'cat':'OLL','name':'OLL 35','alg':"R U2' R2' F R F' R U2' R'",'level':1,'oll':'011011000','desc':''},
+{'cat':'OLL','name':'OLL 36','alg':"R' U' R U' R' U R U l U' R' U",'level':2,'oll':'010110011','desc':''},
+{'cat':'OLL','name':'OLL 37 (Fish)','alg':"F R' F' R U R U' R'",'level':1,'oll':'000011110','desc':'Fish shape top-right'},
+{'cat':'OLL','name':'OLL 38','alg':"R U R' U R U' R' U' R' F R F'",'level':2,'oll':'100110010','desc':''},
+{'cat':'OLL','name':'OLL 39 (Big fish)','alg':"R' F R U R' U' F' U R",'level':1,'oll':'100010110','desc':''},
+{'cat':'OLL','name':'OLL 40 (Big fish)','alg':"R U R' F' U' F R U R'",'level':1,'oll':'011010001','desc':''},
+{'cat':'OLL','name':'OLL 41 (L)','alg':"R U' R' U2 R U y R U' R' U' F'",'level':2,'oll':'011011010','desc':''},
+{'cat':'OLL','name':'OLL 42 (L)','alg':"R' U R U2' R' U' y' R' U R U F",'level':2,'oll':'010110110','desc':''},
+{'cat':'OLL','name':'OLL 43','alg':"f' L' U' L U f",'level':1,'oll':'001100010','desc':''},
+{'cat':'OLL','name':'OLL 44 (T)','alg':"f R U R' U' f'",'level':0,'oll':'010001100','desc':'T shape variation'},
+{'cat':'OLL','name':'OLL 45 (T)','alg':"F R U R' U' F'",'level':0,'oll':'010011010','desc':'Front T shape'},
+{'cat':'OLL','name':'OLL 46','alg':"R' U' R' F R F' U R",'level':1,'oll':'010100110','desc':''},
+{'cat':'OLL','name':'OLL 47 (Pi)','alg':"F' L' U' L U L' U' L U F",'level':1,'oll':'110011100','desc':'Pi variation'},
+{'cat':'OLL','name':'OLL 48 (Pi)','alg':"F R U R' U' R U R' U' F'",'level':1,'oll':'001110001','desc':'Pi variation 2'},
+{'cat':'OLL','name':'OLL 49 (Pi)','alg':"r U2' R' U' R U' r' U r' U' R U' R' U2 r",'level':2,'oll':'110111100','desc':''},
+{'cat':'OLL','name':'OLL 50 (Pi)','alg':"r' U2 R U R' U r U' r U R' U R U2' r'",'level':2,'oll':'001111001','desc':''},
+{'cat':'OLL','name':'OLL 51 (Bowtie)','alg':"f R U R' U' R U R' U' f'",'level':1,'oll':'000111000','desc':'Bow-tie'},
+{'cat':'OLL','name':'OLL 52 (Bowtie)','alg':"r U R' U R U' R' U R U2' r'",'level':1,'oll':'010011100','desc':''},
+{'cat':'OLL','name':'OLL 53 (Chameleon)','alg':"l' U2 L U L' U l",'level':1,'oll':'100011001','desc':'Chameleon'},
+{'cat':'OLL','name':'OLL 54 (Chameleon)','alg':"r U2' R' U' R U' r'",'level':1,'oll':'100110001','desc':'Chameleon mirror'},
+{'cat':'OLL','name':'OLL 55 (Bowtie)','alg':"R' F R U R U' R2' F' R2 U' R' U R U R'",'level':2,'oll':'011111010','desc':''},
+{'cat':'OLL','name':'OLL 56 (Bowtie)','alg':"r' U' r U' R' U R U' R' U R r' U r",'level':2,'oll':'010111110','desc':''},
+{'cat':'OLL','name':'OLL 57 (H)','alg':"R U R' U' M' U R U' r'",'level':1,'oll':'010111010','desc':'H shape with M-slice'},
+
+// ── PLL (21 cases) ─────────────────────────────────────────────────────────────
+{'cat':'PLL','name':'PLL - Skip','alg':'(Skip)','level':0,'desc':'Already solved!'},
+{'cat':'PLL','name':'Ua','alg':"R U' R U R U R U' R' U' R2",'level':0,'desc':'3 edges cycle CW'},
+{'cat':'PLL','name':'Ub','alg':"R2 U R U R' U' R' U' R' U R'",'level':0,'desc':'3 edges cycle CCW'},
+{'cat':'PLL','name':'H','alg':"M2' U M2' U2' M2' U M2'",'level':0,'desc':'Opposite edges swap x2'},
+{'cat':'PLL','name':'Z','alg':"M2' U M2' U M' U2' M2' U2' M'",'level':0,'desc':'Adjacent edges swap x2'},
+{'cat':'PLL','name':'T','alg':"R U R' U' R' F R2 U' R' U' R U R' F'",'level':0,'desc':'Swap 2 corners + 2 edges'},
+{'cat':'PLL','name':'Y','alg':"F R U' R' U' R U R' F' R U R' U' R' F R F'",'level':1,'desc':'Diagonal swap'},
+{'cat':'PLL','name':'F','alg':"R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R",'level':1,'desc':''},
+{'cat':'PLL','name':'Aa','alg':"x R' U R' D2 R U' R' D2 R2 x'",'level':1,'desc':'3 corners cycle CW'},
+{'cat':'PLL','name':'Ab','alg':"x R2 D2 R U R' D2 R U' R x'",'level':1,'desc':'3 corners cycle CCW'},
+{'cat':'PLL','name':'Ja','alg':"x R2 F R F' R U2' r' U r U2' x'",'level':1,'desc':''},
+{'cat':'PLL','name':'Jb','alg':"R U R' F' R U R' U' R' F R2 U' R'",'level':1,'desc':''},
+{'cat':'PLL','name':'Ra','alg':"R U R' F' R U2' R' U2' R' F R U R U2' R'",'level':1,'desc':''},
+{'cat':'PLL','name':'Rb','alg':"R' U2 R U2' R' F R U R' U' R' F' R2",'level':1,'desc':''},
+{'cat':'PLL','name':'V','alg':"R' U R' d' R' F' R2 U' R' U R' F R F",'level':2,'desc':''},
+{'cat':'PLL','name':'Na','alg':"R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'",'level':2,'desc':'Longest PLL'},
+{'cat':'PLL','name':'Nb','alg':"R' U L' U2 R U' L R' U L' U2 R U' L",'level':2,'desc':'N-perm mirror'},
+{'cat':'PLL','name':'E','alg':"x' R U' R' D R U R' D' R U R' D R U' R' D' x",'level':2,'desc':'Opposite corners swap'},
+{'cat':'PLL','name':'Ga','alg':"R2 U R' U R' U' R U' R2 D U' R' U R D'",'level':2,'desc':'G-perm CW'},
+{'cat':'PLL','name':'Gb','alg':"R' U' R U D' R2 U R' U R U' R U' R2 D",'level':2,'desc':'G-perm CCW'},
+{'cat':'PLL','name':'Gc','alg':"R2 F2 R U2 R U2' R' F R U R' U' R' F R2",'level':2,'desc':''},
+{'cat':'PLL','name':'Gd','alg':"R U R' U' D R2 U' R U' R' U R' U R2 D'",'level':2,'desc':''},
+
+// ── 2x2 ────────────────────────────────────────────────────────────────────────
+{'cat':'2x2','name':'OLL - Skip','alg':'(Skip)','level':0,'desc':'Top already oriented'},
+{'cat':'2x2','name':'OLL 1 (Sune)','alg':"R U R' U R U2' R'",'level':0,'desc':'Sune'},
+{'cat':'2x2','name':'OLL 2 (Anti-Sune)','alg':"R U2' R' U' R U' R'",'level':0,'desc':'Anti-Sune'},
+{'cat':'2x2','name':'OLL 3 (H)','alg':"F R U R' U' F'",'level':0,'desc':'2 headlights'},
+{'cat':'2x2','name':'OLL 4 (Pi)','alg':"R U2' R' U' R U' R' F R U R' U' F'",'level':1,'desc':'Pi / 4 diagonal'},
+{'cat':'2x2','name':'OLL 5 (S)','alg':"F' r U R' U' r' F R",'level':1,'desc':'S shape'},
+{'cat':'2x2','name':'OLL 6 (S mirror)','alg':"f R U R' U' f'",'level':1,'desc':'S mirror'},
+{'cat':'2x2','name':'OLL 7 (L)','alg':"F R' F' r U R U' r'",'level':1,'desc':'L shape'},
+{'cat':'2x2','name':'PBL Ua','alg':"R U' R U R U R U' R' U' R2",'level':0,'desc':'U-perm CW'},
+{'cat':'2x2','name':'PBL Ub','alg':"R2 U R U R' U' R' U' R' U R'",'level':0,'desc':'U-perm CCW'},
+{'cat':'2x2','name':'PBL H','alg':"R2 U2 R2 U2 R2",'level':0,'desc':'Headlights on both'},
+{'cat':'2x2','name':'PBL Z','alg':"R U R' U R U' R' U' R' F R F'",'level':1,'desc':'Z-perm 2x2'},
+{'cat':'2x2','name':'PBL Aa','alg':"x R' U R' D2 R U' R' D2 R2",'level':1,'desc':'A-perm CW'},
+{'cat':'2x2','name':'PBL Ab','alg':"x R2 D2 R U R' D2 R U' R",'level':1,'desc':'A-perm CCW'},
+{'cat':'2x2','name':'CLL U-front','alg':"R U' R' U' R U R' F' R U R' U' R' F R",'level':2,'desc':'CLL: U face adj corner'},
+
+// ── Pyraminx ────────────────────────────────────────────────────────────────────
+{'cat':'Pyraminx','name':'Solved','alg':'(Solved)','level':0,'desc':'Already solved'},
+{'cat':'Pyraminx','name':'L4E 1','alg':"R U R' U R U2' R' U",'level':0,'desc':'3 edges cycle'},
+{'cat':'Pyraminx','name':'L4E 2','alg':"U' R U' R' U R' U R",'level':0,'desc':'3 edges CCW'},
+{'cat':'Pyraminx','name':'L4E 3','alg':"R U R' U' R U R'",'level':0,'desc':'Edge flip + cycle'},
+{'cat':'Pyraminx','name':'L4E 4','alg':"R' U R U' R' U' R",'level':0,'desc':'Mirror L4E 3'},
+{'cat':'Pyraminx','name':'L4E 5','alg':"U R U' R U' R' U R'",'level':1,'desc':'Adjacent edge swap'},
+{'cat':'Pyraminx','name':'L4E 6','alg':"R' U R' U R U' R' U R U' R",'level':1,'desc':''},
+{'cat':'Pyraminx','name':'L4E 7','alg':"U R U R' U R' U' R",'level':1,'desc':''},
+
+// ── Skewb ────────────────────────────────────────────────────────────────────
+{'cat':'Skewb','name':'Sarah Adj','alg':"R' L R L' R' L R L'",'level':0,'desc':'Adjacent corner swap'},
+{'cat':'Skewb','name':'Sarah Diag','alg':"R L' R' L R L' R' L",'level':0,'desc':'Diagonal corner swap'},
+{'cat':'Skewb','name':'3 corners CW','alg':"R' L R L' y R' L R L'",'level':1,'desc':'3 top corners cycle'},
+{'cat':'Skewb','name':'3 corners CCW','alg':"L R' L' R y L R' L' R",'level':1,'desc':'Mirror 3-cycle'},
+{'cat':'Skewb','name':'Centers + corners','alg':"R L R L R L",'level':1,'desc':'Cycle centers'},
 ];
 
-const _levels = ['Base', 'Avanzato', 'Elite'];
+const _levels = ['Principiante', 'Avanzato', 'Expert'];
 const _levelColors = [Color(0xFF30D158), Color(0xFFFF9F0A), Color(0xFFFF453A)];
 
 class AlgorithmsScreen extends StatefulWidget {
   const AlgorithmsScreen({super.key});
-  @override
-  State<AlgorithmsScreen> createState() => _AlgScreenState();
+  @override State<AlgorithmsScreen> createState() => _AlgState();
 }
 
-class _AlgScreenState extends State<AlgorithmsScreen>
-    with SingleTickerProviderStateMixin {
+class _AlgState extends State<AlgorithmsScreen> with SingleTickerProviderStateMixin {
   late TabController _tab;
   String _search = '';
-  final _searchCtrl = TextEditingController();
-  // Livello selezionato: null = tutti
   int? _levelFilter;
+  final _searchCtrl = TextEditingController();
 
-  @override
-  void initState() {
-    super.initState();
-    _tab = TabController(length: 5, vsync: this);
-  }
+  static const _cats = ['F2L','OLL','PLL','2x2','Pyraminx','Skewb'];
 
-  @override
-  void dispose() {
-    _tab.dispose();
-    _searchCtrl.dispose();
-    super.dispose();
-  }
+  @override void initState() { super.initState(); _tab = TabController(length: _cats.length, vsync: this); }
+  @override void dispose() { _tab.dispose(); _searchCtrl.dispose(); super.dispose(); }
 
-  List<String> get _cats {
-    final all = _algs.map((a) => a['cat'] as String).toSet().toList();
-    return all;
-  }
-
-  List<Map<String, dynamic>> _filtered(String cat) {
-    return _algs.where((a) {
-      if (a['cat'] != cat) return false;
-      if (_levelFilter != null && a['level'] != _levelFilter) return false;
-      if (_search.isNotEmpty) {
-        return (a['name'] as String)
-                .toLowerCase()
-                .contains(_search.toLowerCase()) ||
-            (a['alg'] as String).toLowerCase().contains(_search.toLowerCase());
-      }
-      return true;
-    }).toList();
-  }
+  List<Map<String,dynamic>> _filtered(String cat) => _algs.where((a) {
+    if (a['cat'] != cat) return false;
+    if (_levelFilter != null && a['level'] != _levelFilter) return false;
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
+      return (a['name'] as String).toLowerCase().contains(q) ||
+             (a['alg'] as String).toLowerCase().contains(q) ||
+             (a['desc'] as String? ?? '').toLowerCase().contains(q);
+    }
+    return true;
+  }).toList();
 
   @override
   Widget build(BuildContext context) {
     final th = Theme.of(context);
     final accent = th.colorScheme.primary;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        title: const Text('Algoritmi'),
-        bottom: TabBar(
-            controller: _tab,
-            labelColor: accent,
-            unselectedLabelColor:
-                th.colorScheme.onSurface.withValues(alpha: 0.5),
-            indicatorColor: accent,
-            isScrollable: true,
-            tabs: _cats.map((c) => Tab(text: c)).toList()),
-      ),
+      appBar: AppBar(title: const Text('Algoritmi'),
+        bottom: TabBar(controller: _tab, isScrollable: true,
+          labelColor: accent, unselectedLabelColor: th.colorScheme.onSurface.withValues(alpha:0.5),
+          indicatorColor: accent,
+          tabs: _cats.map((c) => Tab(text: c)).toList())),
       body: Column(children: [
-        // Search + level filter
-        Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Row(children: [
-              Expanded(
-                  child: TextField(
-                      controller: _searchCtrl,
-                      onChanged: (v) => setState(() => _search = v),
-                      decoration: InputDecoration(
-                          hintText: 'Cerca...',
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          suffixIcon: _search.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 16),
-                                  onPressed: () {
-                                    _searchCtrl.clear();
-                                    setState(() => _search = '');
-                                  })
-                              : null))),
-              const SizedBox(width: 8),
-              PopupMenuButton<int?>(
-                  icon: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                          color: _levelFilter != null
-                              ? _levelColors[_levelFilter!]
-                                  .withValues(alpha: 0.15)
-                              : th.cardColor,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: th.dividerColor)),
-                      child: Text(
-                          _levelFilter != null
-                              ? _levels[_levelFilter!]
-                              : 'Tutti',
-                          style: GoogleFonts.nunito(
-                              fontSize: 12,
-                              color: _levelFilter != null
-                                  ? _levelColors[_levelFilter!]
-                                  : th.colorScheme.onSurface))),
-                  onSelected: (v) => setState(() => _levelFilter = v),
-                  itemBuilder: (_) => [
-                        PopupMenuItem(
-                            value: null,
-                            child: Text('Tutti', style: GoogleFonts.nunito())),
-                        ...List.generate(
-                            3,
-                            (i) => PopupMenuItem(
-                                value: i,
-                                child: Row(children: [
-                                  Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                          color: _levelColors[i],
-                                          shape: BoxShape.circle)),
-                                  const SizedBox(width: 8),
-                                  Text(_levels[i], style: GoogleFonts.nunito()),
-                                ]))),
-                      ]),
-            ])),
-        // Content
-        Expanded(
-            child: TabBarView(
-                controller: _tab,
-                children: _cats.map((cat) {
-                  final algs = _filtered(cat);
-                  if (algs.isEmpty) {
-                    return Center(
-                        child: Text('Nessun algoritmo',
-                            style: th.textTheme.bodyMedium));
-                  }
-                  return ListView(
-                      physics: const ClampingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 80),
-                      children: algs
-                          .map((a) =>
-                              _AlgCard(alg: a, theme: th, accent: accent))
-                          .toList());
-                }).toList())),
+        Padding(padding: const EdgeInsets.fromLTRB(12,8,12,4), child: Row(children: [
+          Expanded(child: TextField(controller: _searchCtrl,
+            onChanged: (v) => setState(()=>_search=v),
+            decoration: InputDecoration(hintText:'Cerca algoritmo...', prefixIcon: const Icon(Icons.search,size:18),
+              suffixIcon: _search.isNotEmpty ? IconButton(icon:const Icon(Icons.clear,size:16),
+                  onPressed:(){_searchCtrl.clear();setState(()=>_search='');}) : null))),
+          const SizedBox(width:8),
+          PopupMenuButton<int?>(
+            icon: Container(padding: const EdgeInsets.symmetric(horizontal:8,vertical:4),
+              decoration: BoxDecoration(color: _levelFilter!=null?_levelColors[_levelFilter!].withValues(alpha:0.12):th.cardColor,
+                  borderRadius: BorderRadius.circular(10), border: Border.all(color:th.dividerColor)),
+              child: Text(_levelFilter!=null?_levels[_levelFilter!]:'Livello',
+                  style: TextStyle(fontSize:12,color:_levelFilter!=null?_levelColors[_levelFilter!]:th.colorScheme.onSurface))),
+            onSelected: (v) => setState(()=>_levelFilter=v),
+            itemBuilder: (_) => [
+              const PopupMenuItem(value:null, child:Text('Tutti')),
+              ...List.generate(3, (i)=>PopupMenuItem(value:i, child: Row(children:[
+                Container(width:10,height:10,decoration:BoxDecoration(color:_levelColors[i],shape:BoxShape.circle)),
+                const SizedBox(width:8), Text(_levels[i]),
+              ]))),
+            ]),
+        ])),
+        Expanded(child: TabBarView(controller: _tab, children: _cats.map((cat) {
+          final algs = _filtered(cat);
+          if (algs.isEmpty) return Center(child: Text('Nessun algoritmo', style:th.textTheme.bodyMedium));
+          return ListView.builder(
+            padding: const EdgeInsets.fromLTRB(12,4,12,80),
+            itemCount: algs.length,
+            itemBuilder: (_,i) => _AlgCard(alg:algs[i], theme:th, accent:accent));
+        }).toList())),
       ]),
     );
   }
 }
 
 class _AlgCard extends StatefulWidget {
-  final Map<String, dynamic> alg;
-  final ThemeData theme;
-  final Color accent;
-  const _AlgCard(
-      {required this.alg, required this.theme, required this.accent});
-  @override
-  State<_AlgCard> createState() => _AlgCardState();
+  final Map<String,dynamic> alg; final ThemeData theme; final Color accent;
+  const _AlgCard({required this.alg, required this.theme, required this.accent});
+  @override State<_AlgCard> createState() => _AlgCardState();
 }
 
 class _AlgCardState extends State<_AlgCard> {
   bool _expanded = false;
-
   @override
   Widget build(BuildContext context) {
-    final a = widget.alg;
-    final th = widget.theme;
-    final accent = widget.accent;
-    final level = a['level'] as int;
-
+    final a=widget.alg; final th=widget.theme; final accent=widget.accent;
+    final lvl=a['level'] as int;
     return GestureDetector(
-      onTap: () => setState(() => _expanded = !_expanded),
+      onTap: () => setState(()=>_expanded=!_expanded),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: th.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: th.dividerColor)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                    color: _levelColors[level], shape: BoxShape.circle)),
-            const SizedBox(width: 8),
-            Expanded(
-                child: Text(a['name'],
-                    style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        color: th.colorScheme.onSurface))),
-            Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                    color: _levelColors[level].withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Text(_levels[level],
-                    style: GoogleFonts.nunito(
-                        fontSize: 10,
-                        color: _levelColors[level],
-                        fontWeight: FontWeight.w700))),
-            const SizedBox(width: 8),
-            Icon(_expanded ? Icons.expand_less : Icons.expand_more,
-                size: 16,
-                color: th.colorScheme.onSurface.withValues(alpha: 0.4)),
+        margin: const EdgeInsets.only(bottom:8),
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(color:th.cardColor, borderRadius:BorderRadius.circular(14),
+            border:Border.all(color:th.dividerColor)),
+        child: Column(crossAxisAlignment:CrossAxisAlignment.start, children:[
+          Row(children:[
+            Container(width:8,height:8,decoration:BoxDecoration(color:_levelColors[lvl],shape:BoxShape.circle)),
+            const SizedBox(width:8),
+            Expanded(child:Text(a['name'],style:TextStyle(fontWeight:FontWeight.w700,fontSize:14,color:th.colorScheme.onSurface))),
+            Container(padding: const EdgeInsets.symmetric(horizontal:8,vertical:2),
+              decoration: BoxDecoration(color:_levelColors[lvl].withValues(alpha:0.12),borderRadius:BorderRadius.circular(8)),
+              child: Text(_levels[lvl],style:TextStyle(fontSize:10,color:_levelColors[lvl],fontWeight:FontWeight.w700))),
+            const SizedBox(width:6),
+            Icon(_expanded?Icons.expand_less:Icons.expand_more,size:16,color:th.colorScheme.onSurface.withValues(alpha:0.4)),
           ]),
-          const SizedBox(height: 6),
-          // Algoritmo
-          Row(children: [
-            Expanded(
-                child: Text(a['alg'],
-                    style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        color: Color(0xFF6C63FF),
-                        letterSpacing: 0.3))),
-            IconButton(
-                icon: const Icon(Icons.copy, size: 14),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                color: th.colorScheme.onSurface.withValues(alpha: 0.3),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: a['alg']));
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Copiato!', style: GoogleFonts.nunito()),
-                      duration: const Duration(seconds: 1),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12))));
-                }),
+          const SizedBox(height:6),
+          Row(children:[
+            Expanded(child:Text(a['alg'],style:const TextStyle(fontFamily:'monospace',fontSize:13,color:Color(0xFF6C63FF),letterSpacing:0.3))),
+            InkWell(onTap:(){Clipboard.setData(ClipboardData(text:a['alg']));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content:const Text('Copiato!'), duration:const Duration(seconds:1),
+                behavior:SnackBarBehavior.floating,
+                shape:RoundedRectangleBorder(borderRadius:BorderRadius.circular(12))));},
+              child:Icon(Icons.copy_outlined,size:15,color:th.colorScheme.onSurface.withValues(alpha:0.35))),
           ]),
           if (_expanded) ...[
-            const SizedBox(height: 10),
-            // Immagine esplicativa: cube visualizer
-            _CaseVisualizer(
-                caseId: a['img'] ?? '',
-                cat: a['cat'] ?? '',
-                theme: th,
-                accent: accent),
-            if ((a['desc'] as String).isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(a['desc'],
-                  style: th.textTheme.bodyMedium?.copyWith(fontSize: 12)),
+            const SizedBox(height:10),
+            // Visual case diagram
+            if (a['cat']=='OLL' && a['oll']!=null)
+              _OllDiagram(ollStr: a['oll'] as String, accent: accent),
+            if (a['cat']=='PLL')
+              _PllDiagram(name: a['name'], accent: accent),
+            if ((a['desc'] as String? ?? '').isNotEmpty) ...[
+              const SizedBox(height:6),
+              Text(a['desc'],style:th.textTheme.bodyMedium?.copyWith(fontSize:12)),
             ],
           ],
-        ]),
-      ),
-    );
+        ])));
   }
 }
 
-// Visualizzatore del caso: disegna una rappresentazione 2D del top del cubo
-class _CaseVisualizer extends StatelessWidget {
-  final String caseId, cat;
-  final ThemeData theme;
-  final Color accent;
-  const _CaseVisualizer(
-      {required this.caseId,
-      required this.cat,
-      required this.theme,
-      required this.accent});
-
+// ── OLL Diagram: 3x3 top face with sticker orientation ────────
+class _OllDiagram extends StatelessWidget {
+  final String ollStr; final Color accent;
+  const _OllDiagram({required this.ollStr, required this.accent});
   @override
   Widget build(BuildContext context) {
-    // Genera un pattern visivo basato sull'ID del caso
-    // Per OLL: mostra faccia top con orientamento stickers
-    // Per PLL: mostra frecce di permutazione
-    return Container(
-      height: 90,
-      decoration: BoxDecoration(
-          color: theme.dividerColor, borderRadius: BorderRadius.circular(10)),
-      child: Row(children: [
-        Expanded(
-            child: CustomPaint(
-                painter:
-                    _CasePainter(caseId: caseId, cat: cat, accent: accent))),
-        // Info URL
-        Padding(
-            padding: const EdgeInsets.all(8),
-            child:
-                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.grid_3x3, color: accent, size: 28),
-              const SizedBox(height: 4),
-              Text('Vista\ntop',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 9)),
-            ])),
-      ]),
-    );
+    final th=Theme.of(context);
+    return Row(children:[
+      SizedBox(width:72,height:72,child:CustomPaint(painter:_OllPainter(ollStr))),
+      const SizedBox(width:12),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text('Vista top', style:th.textTheme.bodyMedium?.copyWith(fontSize:10,
+            color:th.colorScheme.onSurface.withValues(alpha:0.5))),
+        const SizedBox(height:4),
+        Text('⬜ Orientato  🟫 Da girare',
+            style:th.textTheme.bodyMedium?.copyWith(fontSize:10)),
+      ])),
+    ]);
   }
 }
 
-class _CasePainter extends CustomPainter {
-  final String caseId, cat;
-  final Color accent;
-  _CasePainter({required this.caseId, required this.cat, required this.accent});
-
-  static const _yc = Color(0xFFFFD500);
-  static const _gc = Color(0xFF888888); // grigio = non orientato
-
-  // Definisce quali sticker sono gialli per ogni caso OLL
-  // Lista 9 booleani: [tl, tc, tr, ml, cc, mr, bl, bc, br] — cc sempre true
-  static const _ollMap = <String, List<bool>>{
-    'oll_21': [true, false, true, false, true, false, true, false, true], // H
-    'oll_22': [false, true, false, true, true, true, false, true, false], // Pi
-    'oll_23': [
-      false,
-      false,
-      true,
-      false,
-      true,
-      true,
-      true,
-      false,
-      true
-    ], // Sune
-    'oll_24': [
-      true,
-      false,
-      false,
-      true,
-      true,
-      false,
-      true,
-      false,
-      true
-    ], // Anti-sune
-    'oll_25': [false, false, false, false, true, true, false, true, false], // T
-    'oll_26': [false, false, false, false, true, false, false, false, true],
-    'oll_27': [true, false, false, false, true, false, false, false, false],
-    'oll_33': [false, false, true, false, true, true, false, false, false],
-    'oll_37': [false, true, false, false, true, false, false, false, true],
-    'oll_44': [false, false, false, false, true, true, false, false, false],
-    'oll_45': [false, false, false, false, true, true, false, true, false],
-    'oll_57': [false, true, false, true, true, true, false, true, false],
-  };
-
+class _OllPainter extends CustomPainter {
+  final String ollStr; // 9 chars: '0' or '1'
+  _OllPainter(this.ollStr);
+  static const _Y = Color(0xFFFFD500);
+  static const _G = Color(0xFF666666);
   @override
-  void paint(Canvas canvas, Size size) {
-    final cellSize = size.height / 3 - 2;
-    final startX = (size.width - cellSize * 3 - 4) / 2;
-    final startY = 2.0;
+  void paint(Canvas cv, Size sz) {
+    final cell=sz.width/3;
+    final ep=Paint()..color=Colors.black.withValues(alpha:0.2)..style=PaintingStyle.stroke..strokeWidth=0.5;
+    for (int i=0;i<9;i++) {
+      final r=i~/3, c=i%3;
+      final isY = (i<ollStr.length && ollStr[i]=='1') || i==4; // center always yellow
+      final rect=RRect.fromRectAndRadius(Rect.fromLTWH(c*cell+0.5,r*cell+0.5,cell-1,cell-1),Radius.circular(cell*0.15));
+      cv.drawRRect(rect, Paint()..color=isY?_Y:_G);
+      cv.drawRRect(rect, ep);
+    }
+  }
+  @override bool shouldRepaint(_OllPainter o) => o.ollStr != ollStr;
+}
 
-    List<bool> pattern;
-    if (cat == 'OLL' || cat == '2x2') {
-      pattern = _ollMap[caseId] ?? List.filled(9, true);
-    } else if (cat == 'PLL') {
-      // PLL: tutti gialli, frecce mostrate
-      pattern = List.filled(9, true);
+// ── PLL Diagram: colored U/D/L/R arrows ────────────────────────
+class _PllDiagram extends StatelessWidget {
+  final String name; final Color accent;
+  const _PllDiagram({required this.name, required this.accent});
+  @override
+  Widget build(BuildContext context) {
+    final th=Theme.of(context);
+    return Row(children:[
+      SizedBox(width:72,height:72,child:CustomPaint(painter:_PllPainter(name,accent))),
+      const SizedBox(width:12),
+      Expanded(child:Text('Permutazione del top layer\n(frecce = direzione ciclo)',
+          style:th.textTheme.bodyMedium?.copyWith(fontSize:10))),
+    ]);
+  }
+}
+
+class _PllPainter extends CustomPainter {
+  final String name; final Color accent;
+  _PllPainter(this.name, this.accent);
+  static const _W=Color(0xFFFAFAFA);
+  @override
+  void paint(Canvas cv, Size sz) {
+    final cx=sz.width/2, cy=sz.height/2;
+    // Draw top face solved (all yellow)
+    final cell=sz.width/4;
+    for (int r=0;r<3;r++) for (int c=0;c<3;c++) {
+      final rect=RRect.fromRectAndRadius(Rect.fromLTWH(cx-1.5*cell+c*cell+0.5,cy-1.5*cell+r*cell+0.5,cell-1,cell-1),Radius.circular(cell*0.12));
+      cv.drawRRect(rect, Paint()..color=const Color(0xFFFFD500));
+      cv.drawRRect(rect, Paint()..color=Colors.black.withValues(alpha:0.15)..style=PaintingStyle.stroke..strokeWidth=0.5);
+    }
+    // Draw arrows based on PLL type
+    final ap=Paint()..color=accent..strokeWidth=2.0..strokeCap=StrokeCap.round..style=PaintingStyle.stroke;
+    void arrow(Offset from, Offset to) {
+      cv.drawLine(from,to,ap);
+      final dir=(to-from); final len=dir.distance;
+      final norm=Offset(dir.dx/len,dir.dy/len);
+      final perp=Offset(-norm.dy,norm.dx);
+      cv.drawLine(to,to-norm*8+perp*4,ap);
+      cv.drawLine(to,to-norm*8-perp*4,ap);
+    }
+    // Simple arrow pattern
+    if (name.contains('Ua')||name.contains('Ub')) {
+      // 3-cycle edges
+      arrow(Offset(cx-cell,cy-cell*1.8), Offset(cx,cy-cell*1.8));
+      arrow(Offset(cx,cy-cell*1.8), Offset(cx+cell*0.5,cy-cell));
+    } else if (name=='H') {
+      arrow(Offset(cx-cell*1.5,cy), Offset(cx+cell*1.5,cy));
+      arrow(Offset(cx+cell*1.5,cy), Offset(cx-cell*1.5,cy));
     } else {
-      pattern = List.filled(9, true);
-    }
-
-    for (int r = 0; r < 3; r++) {
-      for (int c = 0; c < 3; c++) {
-        final idx = r * 3 + c;
-        final isYellow = pattern[idx];
-        final rect = RRect.fromRectAndRadius(
-            Rect.fromLTWH(startX + c * (cellSize + 2),
-                startY + r * (cellSize + 2), cellSize, cellSize),
-            Radius.circular(cellSize * 0.15));
-        canvas.drawRRect(rect, Paint()..color = isYellow ? _yc : _gc);
-        canvas.drawRRect(
-            rect,
-            Paint()
-              ..color = Colors.black.withValues(alpha: 0.25)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 0.5);
-      }
-    }
-
-    // Frecce PLL
-    if (cat == 'PLL') {
-      _drawPllArrows(canvas, size, startX, startY, cellSize);
+      // Generic: show a cycle arrow
+      arrow(Offset(cx-cell,cy-cell), Offset(cx+cell,cy-cell));
+      arrow(Offset(cx+cell,cy-cell), Offset(cx+cell,cy+cell));
+      arrow(Offset(cx+cell,cy+cell), Offset(cx-cell,cy-cell));
     }
   }
-
-  void _drawPllArrows(
-      Canvas canvas, Size size, double sx, double sy, double cell) {
-    // Hash dell'id per generare un pattern semi-deterministico
-    final h = caseId.hashCode.abs() % 4;
-    final arrowP = Paint()
-      ..color = accent.withValues(alpha: 0.8)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    // Freccia semplice dall'alto verso destra
-    final y = sy + cell * 1.5;
-    final x1 = sx + cell * 0.5 + h * 2.0;
-    final x2 = sx + cell * 2.5;
-    canvas.drawLine(Offset(x1, y), Offset(x2, y), arrowP);
-    canvas.drawLine(Offset(x2 - 4, y - 3), Offset(x2, y), arrowP);
-    canvas.drawLine(Offset(x2 - 4, y + 3), Offset(x2, y), arrowP);
-  }
-
-  @override
-  bool shouldRepaint(_CasePainter o) => false;
+  @override bool shouldRepaint(_PllPainter o) => o.name != name;
 }

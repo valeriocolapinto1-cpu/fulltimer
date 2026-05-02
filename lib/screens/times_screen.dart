@@ -71,7 +71,7 @@ class _EmptyState extends StatelessWidget {
       Icon(Icons.timer_outlined, size: 64, color: accent.withValues(alpha: 0.25)),
       const SizedBox(height: 16),
       Text('Nessun tempo', style: theme.textTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.onBackground.withValues(alpha: 0.4))),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.4))),
       const SizedBox(height: 6),
       Text('Vai al timer per iniziare', style: theme.textTheme.bodyMedium),
     ]));

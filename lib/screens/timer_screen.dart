@@ -64,7 +64,7 @@ class _TimerScreenState extends State<TimerScreen> {
         timer.state == TimerState.ready || timer.state == TimerState.inspection ||
         timer.state == TimerState.holdingFromInspection || timer.state == TimerState.readyFromInspection;
 
-    return Scaffold(backgroundColor: Colors.transparent,
+    return Scaffold(backgroundColor: Colors.transparent, resizeToAvoidBottomInset: true,
       body: SafeArea(child: Column(children: [
         AnimatedOpacity(opacity: isActive ? 0 : 1, duration: const Duration(milliseconds: 200),
           child: IgnorePointer(ignoring: isActive, child: Column(children: [
@@ -147,7 +147,7 @@ class _ManualInputState extends State<_ManualInput> {
   Widget build(BuildContext context) {
     final th = Theme.of(context);
     final onSurf = th.colorScheme.onSurface;
-    return Scaffold(backgroundColor: Colors.transparent,
+    return Scaffold(backgroundColor: Colors.transparent, resizeToAvoidBottomInset: true,
       body: SafeArea(child: Column(children: [
         const SizedBox(height: 8),
         EventSelector(events: widget.session.allEvents, activeEventId: widget.session.activeEventId,
@@ -163,7 +163,7 @@ class _ManualInputState extends State<_ManualInput> {
           child: Column(children: [
             Text('hh:mm:ss.ms', style: th.textTheme.labelSmall?.copyWith(letterSpacing: 2)),
             const SizedBox(height: 8),
-            Text(_digits.isEmpty ? '0 ; 00' : _display,
+            Text(_digits.isEmpty ? '0.00' : _display,
                 style: GoogleFonts.nunito(fontSize: 52, fontWeight: FontWeight.w200,
                     color: _digits.isEmpty ? onSurf.withValues(alpha:0.3) : onSurf, letterSpacing: -1)),
           ]),
@@ -225,7 +225,7 @@ class _ScrambleBar extends StatelessWidget {
               style: th.textTheme.bodyMedium?.copyWith(fontFamily: 'monospace', fontSize: 12, letterSpacing: 0.3))),
           GestureDetector(onTap: onRefresh, child: Icon(Icons.refresh_rounded, color: accentColor, size: 20)),
         ]),
-        if (showPreview && (eventId == '3x3' || eventId == 'oh')) ...[
+        if (showPreview) ...[
           const SizedBox(height: 8),
           Center(child: ScramblePreview(scramble: scramble, eventId: eventId, size: 120)),
         ],

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static ThemeData build({required bool dark, required Color accent, String fontFamily = 'Nunito'}) {
+  static ThemeData build({required bool dark, required Color accent, String fontFamily = 'Nunito', bool transparent = false}) {
     final bg      = dark ? const Color(0xFF0D0D0D) : const Color(0xFFF2F2F7);
     final surface = dark ? const Color(0xFF1C1C1E) : Colors.white;
     final onSurf  = dark ? Colors.white : Colors.black;
@@ -35,7 +35,7 @@ class AppTheme {
         surface: surface,    onSurface: onSurf,
         error: const Color(0xFFFF453A), onError: Colors.white,
       ),
-      scaffoldBackgroundColor: bg,
+      scaffoldBackgroundColor: transparent ? Colors.transparent : bg,
       cardColor: surface,
       dividerColor: subtle,
       appBarTheme: AppBarTheme(

@@ -22,7 +22,7 @@ class SpeedCubeApp extends StatelessWidget {
       title: 'SpeedCube Timer',
       debugShowCheckedModeBanner: false,
       locale: Locale(l.lang),
-      theme: AppTheme.build(dark: s.darkMode, accent: s.accentColor, fontFamily: s.fontFamily),
+      theme: AppTheme.build(dark: s.darkMode, accent: s.accentColor, fontFamily: s.fontFamily, transparent: s.useGradient),
       home: const _Shell(),
     );
   }
@@ -95,7 +95,8 @@ class _ShellState extends State<_Shell> {
           color: th.cardColor,
           border: Border(top: BorderSide(color: th.dividerColor, width: 0.5))),
         child: BottomNavigationBar(
-          currentIndex: _idx, onTap: _go,
+          currentIndex: _idx.clamp(0, 3),
+          onTap: (i) { if (i == 4) { _openMenu(context); } else { _go(i); } },
           backgroundColor: Colors.transparent,
           selectedItemColor: s.accentColor,
           unselectedItemColor: onSurf.withValues(alpha: 0.35),
@@ -110,12 +111,7 @@ class _ShellState extends State<_Shell> {
         )),
     );
 
-    // Tap 5th tab → open dropdown menu
-    if (_idx == 4) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_idx == 4) { setState(() => _idx = 0); _pc.jumpToPage(0); _openMenu(context); }
-      });
-    }
+    // Note: menu tab handled via onTap before state changes
 
     if (!s.useGradient) return content;
     return Container(

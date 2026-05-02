@@ -118,7 +118,6 @@ class SettingsScreen extends StatelessWidget {
   String _displayModeName(TimerDisplayMode m) {
     switch (m) {
       case TimerDisplayMode.hidden:           return 'Nascosto';
-      case TimerDisplayMode.full:             return 'Completo';
       case TimerDisplayMode.withDecimals:     return 'Con decimi';
       case TimerDisplayMode.withoutDecimals:  return 'Senza decimi';
     }

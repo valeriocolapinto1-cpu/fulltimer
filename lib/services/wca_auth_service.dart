@@ -10,7 +10,7 @@ class WcaAuthService {
   static const _clientSecret =
       'H1nlFRvEMnF8ASQM6AZSpSBBpFKrobEcgmkAmKg8tIw'; // Replace with real secret
   static const _redirectUri = 'fulltimer://oauth-callback';
-  static const _scope = 'public email';
+  static const _scope = 'public';
   static const _wcaBase = 'https://www.worldcubeassociation.org';
   static const _tokenKey = 'wca_token';
   static const _profileKey = 'wca_profile';

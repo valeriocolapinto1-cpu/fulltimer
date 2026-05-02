@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum TimerDisplayMode { hidden, full, withDecimals, withoutDecimals }
+// Removed 'full' as requested
+enum TimerDisplayMode { hidden, withDecimals, withoutDecimals }
 
 class SettingsProvider extends ChangeNotifier {
   late SharedPreferences _prefs;
@@ -19,30 +20,30 @@ class SettingsProvider extends ChangeNotifier {
   int    _hold        = 550;
   bool   _manual      = false;
   String _font        = 'Nunito';
-  TimerDisplayMode _timerDisplay = TimerDisplayMode.full;
+  TimerDisplayMode _timerDisplay = TimerDisplayMode.withDecimals;
   bool   _showScramblePreview = true;
 
-  bool   get darkMode           => _dark;
-  Color  get accentColor        => _accent;
-  Color  get gradientColor1     => _g1;
-  Color  get gradientColor2     => _g2;
-  bool   get useGradient        => _useGrad;
-  double get gradientBrightness => _bright;
-  bool   get inspectionEnabled  => _inspection;
-  int    get inspectionDuration => _inspDur;
-  bool   get soundEnabled       => _sound;
-  bool   get vibrationEnabled   => _vibration;
-  int    get holdDuration       => _hold;
-  bool   get manualInput        => _manual;
-  String get fontFamily         => _font;
+  bool   get darkMode              => _dark;
+  Color  get accentColor           => _accent;
+  Color  get gradientColor1        => _g1;
+  Color  get gradientColor2        => _g2;
+  bool   get useGradient           => _useGrad;
+  double get gradientBrightness    => _bright;
+  bool   get inspectionEnabled     => _inspection;
+  int    get inspectionDuration    => _inspDur;
+  bool   get soundEnabled          => _sound;
+  bool   get vibrationEnabled      => _vibration;
+  int    get holdDuration          => _hold;
+  bool   get manualInput           => _manual;
+  String get fontFamily            => _font;
   TimerDisplayMode get timerDisplay => _timerDisplay;
-  bool   get showScramblePreview => _showScramblePreview;
+  bool   get showScramblePreview   => _showScramblePreview;
 
   Color get effectiveGradient1 => _applyB(_g1);
   Color get effectiveGradient2 => _applyB(_g2);
   Color _applyB(Color c) {
     final h = HSLColor.fromColor(c);
-    return h.withLightness((h.lightness * _bright).clamp(0.0, 0.85)).toColor();
+    return h.withLightness((h.lightness * _bright).clamp(0.0, 0.88)).toColor();
   }
 
   static const accentColors = [
@@ -80,26 +81,28 @@ class SettingsProvider extends ChangeNotifier {
     _hold       = _prefs.getInt('hold')         ?? 550;
     _manual     = _prefs.getBool('manual')      ?? false;
     _font       = _prefs.getString('font')      ?? 'Nunito';
-    _timerDisplay = TimerDisplayMode.values[_prefs.getInt('timerDisplay') ?? 0];
+    // Map old index (which included 'full' at index 1) to new enum safely
+    final rawIdx = _prefs.getInt('timerDisplay') ?? 0;
+    _timerDisplay = TimerDisplayMode.values[rawIdx.clamp(0, TimerDisplayMode.values.length-1)];
     _showScramblePreview = _prefs.getBool('scramblePreview') ?? true;
     notifyListeners();
   }
 
   Future<void> _set(Future<void> Function() fn) async { await fn(); notifyListeners(); }
 
-  Future<void> setDarkMode(bool v)              => _set(() async { _dark=v;        await _prefs.setBool('dark',v); });
-  Future<void> setAccentColor(Color c)          => _set(() async { _accent=c;      await _prefs.setInt('accent',c.toARGB32()); });
-  Future<void> setGradientColor1(Color c)       => _set(() async { _g1=c;          await _prefs.setInt('g1',c.toARGB32()); });
-  Future<void> setGradientColor2(Color c)       => _set(() async { _g2=c;          await _prefs.setInt('g2',c.toARGB32()); });
-  Future<void> setUseGradient(bool v)           => _set(() async { _useGrad=v;     await _prefs.setBool('useGrad',v); });
-  Future<void> setGradientBrightness(double v)  => _set(() async { _bright=v;      await _prefs.setDouble('bright',v); });
-  Future<void> setInspectionEnabled(bool v)     => _set(() async { _inspection=v;  await _prefs.setBool('inspection',v); });
-  Future<void> setInspectionDuration(int s)     => _set(() async { _inspDur=s;     await _prefs.setInt('inspDur',s); });
-  Future<void> setSoundEnabled(bool v)          => _set(() async { _sound=v;       await _prefs.setBool('sound',v); });
-  Future<void> setVibrationEnabled(bool v)      => _set(() async { _vibration=v;   await _prefs.setBool('vibration',v); });
-  Future<void> setHoldDuration(int ms)          => _set(() async { _hold=ms;       await _prefs.setInt('hold',ms); });
-  Future<void> setManualInput(bool v)           => _set(() async { _manual=v;      await _prefs.setBool('manual',v); });
-  Future<void> setFontFamily(String v)          => _set(() async { _font=v;        await _prefs.setString('font',v); });
+  Future<void> setDarkMode(bool v)             => _set(() async { _dark=v;       await _prefs.setBool('dark',v); });
+  Future<void> setAccentColor(Color c)         => _set(() async { _accent=c;     await _prefs.setInt('accent',c.toARGB32()); });
+  Future<void> setGradientColor1(Color c)      => _set(() async { _g1=c;         await _prefs.setInt('g1',c.toARGB32()); });
+  Future<void> setGradientColor2(Color c)      => _set(() async { _g2=c;         await _prefs.setInt('g2',c.toARGB32()); });
+  Future<void> setUseGradient(bool v)          => _set(() async { _useGrad=v;    await _prefs.setBool('useGrad',v); });
+  Future<void> setGradientBrightness(double v) => _set(() async { _bright=v;     await _prefs.setDouble('bright',v); });
+  Future<void> setInspectionEnabled(bool v)    => _set(() async { _inspection=v; await _prefs.setBool('inspection',v); });
+  Future<void> setInspectionDuration(int s)    => _set(() async { _inspDur=s;    await _prefs.setInt('inspDur',s); });
+  Future<void> setSoundEnabled(bool v)         => _set(() async { _sound=v;      await _prefs.setBool('sound',v); });
+  Future<void> setVibrationEnabled(bool v)     => _set(() async { _vibration=v;  await _prefs.setBool('vibration',v); });
+  Future<void> setHoldDuration(int ms)         => _set(() async { _hold=ms;      await _prefs.setInt('hold',ms); });
+  Future<void> setManualInput(bool v)          => _set(() async { _manual=v;     await _prefs.setBool('manual',v); });
+  Future<void> setFontFamily(String v)         => _set(() async { _font=v;       await _prefs.setString('font',v); });
   Future<void> setTimerDisplay(TimerDisplayMode m) => _set(() async { _timerDisplay=m; await _prefs.setInt('timerDisplay',m.index); });
-  Future<void> setShowScramblePreview(bool v)   => _set(() async { _showScramblePreview=v; await _prefs.setBool('scramblePreview',v); });
+  Future<void> setShowScramblePreview(bool v)  => _set(() async { _showScramblePreview=v; await _prefs.setBool('scramblePreview',v); });
 }

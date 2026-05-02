@@ -16,7 +16,7 @@ class StatsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onBg = theme.colorScheme.onBackground;
+    final onBg = theme.colorScheme.onSurface;
     final String dv = valueMs == null ? '-' : valueMs == -1 ? 'DNF' : SolveTime.format(valueMs!);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -68,7 +68,7 @@ class EventSelector extends StatelessWidget {
               const SizedBox(width: 7),
               Text(event.name, style: TextStyle(fontSize: 12,
                   fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                  color: isActive ? accentColor : theme.colorScheme.onBackground,
+                  color: isActive ? accentColor : theme.colorScheme.onSurface,
                   fontFamily: 'Nunito')),
             ]),
           );
