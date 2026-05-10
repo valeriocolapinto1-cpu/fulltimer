@@ -1,8 +1,12 @@
+// widgets/timer_display.dart
+// Display principale del timer con animazioni di stato
+
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:speedcube_timer/providers/settings_provider.dart';
 import '../models/solve_time.dart';
 import '../providers/timer_provider.dart';
-import '../providers/settings_provider.dart';
 
 class TimerDisplay extends StatelessWidget {
   final TimerState state;
@@ -19,102 +23,200 @@ class TimerDisplay extends StatelessWidget {
     required this.inspectionSecondsLeft,
     required this.isInspectionWarning,
     required this.accentColor,
-    this.displayMode = TimerDisplayMode.withDecimals,
+    required this.displayMode,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // Stati che mostrano l'ispezione
     if (state == TimerState.inspection ||
         state == TimerState.holdingFromInspection ||
         state == TimerState.readyFromInspection) {
       return _InspectionDisplay(
+        key: const ValueKey('inspection'),
         secondsLeft: inspectionSecondsLeft,
         isWarning: isInspectionWarning,
         isReady: state == TimerState.readyFromInspection,
-        accentColor: accentColor, theme: theme);
+        accentColor: accentColor,
+        theme: theme,
+      );
     }
 
-    final color = _color(theme);
-    final timeStr = _formatTime();
+    // Timer display normale
+    final color = _timerColor(theme);
+    final timeStr = (state == TimerState.idle || state == TimerState.stopped)
+        ? _formatTime(elapsedMs)
+        : _formatRunningTime(elapsedMs);
 
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      if (state == TimerState.idle || state == TimerState.stopped)
-        Padding(padding: const EdgeInsets.only(bottom: 10),
-          child: Text(
-            state == TimerState.idle ? 'Tieni premuto per iniziare' : 'Tocca per un nuovo solve',
-            style: theme.textTheme.bodyMedium)),
-      Text(timeStr,
-        style: GoogleFonts.nunito(
-          fontSize: _fontSize(timeStr), color: color,
-          fontWeight: FontWeight.w200, letterSpacing: -2)),
-      if (state == TimerState.holding)
-        Padding(padding: const EdgeInsets.only(top: 8),
-          child: Text('Continua a tenere...', style: theme.textTheme.bodyMedium)),
-      if (state == TimerState.ready)
-        Padding(padding: const EdgeInsets.only(top: 8),
-          child: Text('Rilascia per iniziare',
-            style: theme.textTheme.bodyMedium?.copyWith(color: const Color(0xFF30D158)))),
-    ]);
+    return Column(
+      key: ValueKey(state),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Hint di stato
+        if (state == TimerState.idle || state == TimerState.stopped)
+          _StatusHint(state: state, theme: theme),
+
+        // Tempo principale
+        Text(
+          timeStr,
+          style: theme.textTheme.displayLarge?.copyWith(
+            fontSize: _fontSize(timeStr),
+            color: color,
+            fontWeight: FontWeight.w200,
+            letterSpacing: -2,
+            fontFamily: 'monospace',
+          ),
+        ),
+
+        if (state == TimerState.holding)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Continua a tenere...',
+              style: theme.textTheme.bodyMedium,
+            ),
+          ),
+
+        if (state == TimerState.ready)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+              'Rilascia per iniziare',
+              style: theme.textTheme.bodyMedium?.copyWith(color: accentColor),
+            ),
+          ),
+      ],
+    );
   }
 
-  String _formatTime() {
-    if (elapsedMs == 0 && state != TimerState.running) return '0.00';
-    if (state == TimerState.running) {
-      switch (displayMode) {
-        case TimerDisplayMode.hidden:
-          return '⬤ ⬤ ⬤';
-        case TimerDisplayMode.withoutDecimals:
-          return _noDecimals(elapsedMs);
-        case TimerDisplayMode.withDecimals:
-          // Show decimals under 10s only for readability
-          return elapsedMs < 10000 ? SolveTime.format(elapsedMs) : _noDecimals(elapsedMs);
-      }
-    }
-    return SolveTime.format(elapsedMs);
-  }
-
-  String _noDecimals(int ms) {
-    final s = ms ~/ 1000, m = s ~/ 60;
-    return m > 0 ? '$m:${(s%60).toString().padLeft(2,'0')}' : '$s';
-  }
-
-  Color _color(ThemeData th) {
+  Color _timerColor(ThemeData theme) {
     switch (state) {
-      case TimerState.holding: return th.colorScheme.onSurface.withValues(alpha: 0.35);
-      case TimerState.ready:   return const Color(0xFF30D158);
-      default:                 return th.colorScheme.onSurface;
+      case TimerState.holding:
+        return theme.colorScheme.onSurface.withOpacity(0.4);
+      case TimerState.ready:
+        return const Color(0xFF4CAF50);
+      case TimerState.running:
+        return theme.colorScheme.onSurface;
+      default:
+        return theme.colorScheme.onSurface;
     }
   }
 
-  double _fontSize(String t) {
-    if (t == '⬤ ⬤ ⬤') return 36;
-    if (t.contains(':')) return 72;
-    if (t.length > 7) return 80;
+  double _fontSize(String text) {
+    if (text.contains(':')) return 72;
+    if (text.length > 7) return 80;
     return 96;
+  }
+
+  String _formatRunningTime(int ms) {
+    if (displayMode == TimerDisplayMode.hidden) return '--';
+    if (displayMode == TimerDisplayMode.withoutDecimals) {
+      final seconds = ms ~/ 1000;
+      final minutes = seconds ~/ 60;
+      if (minutes > 0) {
+        return '$minutes:${(seconds % 60).toString().padLeft(2, '0')}';
+      }
+      return '$seconds';
+    }
+    return SolveTime.format(ms);
+  }
+
+  String _formatTime(int ms) {
+    if (displayMode == TimerDisplayMode.hidden) return '--';
+    if (ms == 0) return displayMode == TimerDisplayMode.withoutDecimals ? '0' : '0.00';
+    if (displayMode == TimerDisplayMode.withoutDecimals) {
+      final seconds = ms ~/ 1000;
+      final minutes = seconds ~/ 60;
+      if (minutes > 0) {
+        return '$minutes:${(seconds % 60).toString().padLeft(2, '0')}';
+      }
+      return '$seconds';
+    }
+    return SolveTime.format(ms);
   }
 }
 
+// ── Inspection display ────────────────────────────────────────
+
 class _InspectionDisplay extends StatelessWidget {
-  final int secondsLeft; final bool isWarning, isReady;
-  final Color accentColor; final ThemeData theme;
-  const _InspectionDisplay({required this.secondsLeft, required this.isWarning,
-      required this.isReady, required this.accentColor, required this.theme});
+  final int secondsLeft;
+  final bool isWarning;
+  final bool isReady;
+  final Color accentColor;
+  final ThemeData theme;
+
+  const _InspectionDisplay({
+    super.key,
+    required this.secondsLeft,
+    required this.isWarning,
+    required this.isReady,
+    required this.accentColor,
+    required this.theme,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = isReady ? const Color(0xFF30D158) : isWarning ? const Color(0xFFFF453A) : accentColor;
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      Text('ISPEZIONE', style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 4)),
-      const SizedBox(height: 8),
-      AnimatedDefaultTextStyle(
-        duration: const Duration(milliseconds: 200),
-        style: GoogleFonts.nunito(fontSize: 96, fontWeight: FontWeight.w200, color: color, letterSpacing: -4),
-        child: Text('$secondsLeft')),
-      const SizedBox(height: 8),
-      Text(isReady ? 'Rilascia per avviare!' : 'Tieni premuto per avviare',
-          style: theme.textTheme.bodyMedium?.copyWith(color: isReady ? const Color(0xFF30D158) : null)),
-    ]);
+    final color = isReady
+        ? const Color(0xFF4CAF50) // verde = pronto
+        : isWarning
+            ? const Color(0xFFFF5722) // arancione = warning
+            : accentColor;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'ISPEZIONE',
+          style: theme.textTheme.labelSmall?.copyWith(
+            letterSpacing: 4,
+            color: theme.colorScheme.onSurface.withOpacity(0.5),
+          ),
+        ),
+        const SizedBox(height: 8),
+        AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 200),
+          style: TextStyle(
+            fontSize: 96,
+            fontWeight: FontWeight.w200,
+            color: color,
+            letterSpacing: -4,
+          ),
+          child: Text('$secondsLeft'),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          isReady ? 'Rilascia per avviare!' : 'Tieni premuto per avviare',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: isReady ? const Color(0xFF4CAF50) : null,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Status hint ───────────────────────────────────────────────
+
+class _StatusHint extends StatelessWidget {
+  final TimerState state;
+  final ThemeData theme;
+
+  const _StatusHint({required this.state, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final text = state == TimerState.idle
+        ? 'Tieni premuto per iniziare'
+        : 'Tocca per un nuovo solve';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        text,
+        style: theme.textTheme.bodyMedium,
+      ),
+    );
   }
 }

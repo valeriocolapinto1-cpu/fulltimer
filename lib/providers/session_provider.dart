@@ -14,6 +14,7 @@ class SessionProvider extends ChangeNotifier {
   Session?        _activeSession;
   String          _activeEventId = '3x3';
   String          _currentScramble = '';
+  int             _scrambleRequestId = 0;
 
   SessionProvider(this._storage);
 
@@ -114,7 +115,17 @@ class SessionProvider extends ChangeNotifier {
     return null;
   }
 
-  void _generateScramble() => _currentScramble = ScrambleService.generateFor(_activeEventId);
+  void _generateScramble() {
+    final requestId = ++_scrambleRequestId;
+    final eventId = _activeEventId;
+    _currentScramble = ScrambleService.generateSync(_activeEventId);
+    // Async upgrade: fetch tnoodle scramble in background
+    ScrambleService.generateFor(eventId).then((s) {
+      if (requestId != _scrambleRequestId || eventId != _activeEventId) return;
+      _currentScramble = s;
+      notifyListeners();
+    }).catchError((_) {});
+  }
   void newScramble() { _generateScramble(); notifyListeners(); }
 
   void resetCurrentSession() { _activeSession?.solves.clear(); _storage.saveSessions(_sessions); notifyListeners(); }

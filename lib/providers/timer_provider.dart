@@ -7,7 +7,7 @@ enum TimerState { idle, holding, ready, inspection, holdingFromInspection, ready
 class TimerProvider extends ChangeNotifier {
   TimerState _state = TimerState.idle;
   int  _elapsedMs = 0, _inspectionMs = 0, _inspectionLimit = 15000, _holdDurationMs = 550;
-  bool _inspectionEnabled = true, _soundEnabled = true;
+  bool _inspectionEnabled = true, _soundEnabled = true, _vibrationEnabled = true;
   Timer? _timer, _holdTimer;
   DateTime? _startTime, _inspectionStart;
   Function(int)? onTimerStop;
@@ -20,9 +20,10 @@ class TimerProvider extends ChangeNotifier {
       && inspectionSecondsLeft <= 3;
 
   void configure({required bool inspectionEnabled, required int holdDurationMs,
-      required int inspectionDuration, required bool soundEnabled}) {
+      required int inspectionDuration, required bool soundEnabled, required bool vibrationEnabled}) {
     _inspectionEnabled = inspectionEnabled; _holdDurationMs = holdDurationMs;
     _inspectionLimit = inspectionDuration * 1000; _soundEnabled = soundEnabled;
+    _vibrationEnabled = vibrationEnabled;
   }
 
   void onPointerDown() {
@@ -48,7 +49,11 @@ class TimerProvider extends ChangeNotifier {
   void _startHolding() {
     _holdTimer?.cancel(); _state = TimerState.holding; notifyListeners();
     _holdTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
-      if (_state == TimerState.holding) { _state = TimerState.ready; HapticFeedback.lightImpact(); notifyListeners(); }
+      if (_state == TimerState.holding) {
+        _state = TimerState.ready;
+        if (_vibrationEnabled) HapticFeedback.lightImpact();
+        notifyListeners();
+      }
     });
   }
   void _cancelHold() { _holdTimer?.cancel(); _state = TimerState.idle; notifyListeners(); }
@@ -56,7 +61,11 @@ class TimerProvider extends ChangeNotifier {
   void _startHoldingFromInspection() {
     _holdTimer?.cancel(); _state = TimerState.holdingFromInspection; notifyListeners();
     _holdTimer = Timer(Duration(milliseconds: _holdDurationMs), () {
-      if (_state == TimerState.holdingFromInspection) { _state = TimerState.readyFromInspection; HapticFeedback.lightImpact(); notifyListeners(); }
+      if (_state == TimerState.holdingFromInspection) {
+        _state = TimerState.readyFromInspection;
+        if (_vibrationEnabled) HapticFeedback.lightImpact();
+        notifyListeners();
+      }
     });
   }
   void _cancelHoldInspection() { _holdTimer?.cancel(); _state = TimerState.inspection; notifyListeners(); }
@@ -66,7 +75,7 @@ class TimerProvider extends ChangeNotifier {
     _inspectionStart = DateTime.now(); notifyListeners();
     _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
       _inspectionMs = DateTime.now().difference(_inspectionStart!).inMilliseconds;
-      if (_soundEnabled) {
+      if (_soundEnabled && _vibrationEnabled) {
         // Beep a 8s e 12s via HapticFeedback pattern
         if (_inspectionMs >= 8000  && _inspectionMs < 8100)  { HapticFeedback.heavyImpact(); }
         if (_inspectionMs >= 12000 && _inspectionMs < 12100) { HapticFeedback.vibrate(); }
@@ -81,7 +90,7 @@ class TimerProvider extends ChangeNotifier {
   void _startTimer() {
     _timer?.cancel(); _holdTimer?.cancel();
     _state = TimerState.running; _elapsedMs = 0; _startTime = DateTime.now();
-    HapticFeedback.lightImpact();
+    if (_vibrationEnabled) HapticFeedback.lightImpact();
     _timer = Timer.periodic(const Duration(milliseconds: 10), (_) {
       _elapsedMs = DateTime.now().difference(_startTime!).inMilliseconds; notifyListeners();
     });
@@ -91,7 +100,9 @@ class TimerProvider extends ChangeNotifier {
   void _stopTimer() {
     _timer?.cancel();
     _elapsedMs = DateTime.now().difference(_startTime!).inMilliseconds;
-    _state = TimerState.stopped; HapticFeedback.mediumImpact(); notifyListeners();
+    _state = TimerState.stopped;
+    if (_vibrationEnabled) HapticFeedback.mediumImpact();
+    notifyListeners();
     onTimerStop?.call(_elapsedMs);
   }
 

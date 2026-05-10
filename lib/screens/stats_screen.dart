@@ -146,36 +146,41 @@ class _TimeChart extends StatelessWidget {
         ? valid.sublist(valid.length - (expanded ? 50 : 20))
         : valid;
 
-    return GestureDetector(
-      onTapDown: onHover == null ? null : (d) {
-        final idx = ((d.localPosition.dx / (d.globalPosition.dx / data.length))
-            .clamp(0, data.length - 1)).round();
-        onHover!(idx);
-      },
-      onTapUp: onHover == null ? null : (_) => onHover!(null),
-      child: Container(
-        height: expanded ? 220 : 140,
-        padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: theme.dividerColor),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Expanded(child: CustomPaint(
-            painter: _ChartPainter(
-              times: data.map((s) => s.effectiveMilliseconds).toList(),
-              accent: accent,
-              gridColor: theme.dividerColor,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth > 0 ? constraints.maxWidth : 1.0;
+        return GestureDetector(
+          onTapDown: onHover == null ? null : (d) {
+            final ratio = (d.localPosition.dx / width).clamp(0.0, 1.0);
+            final idx = (ratio * (data.length - 1)).round();
+            onHover!(idx);
+          },
+          onTapUp: onHover == null ? null : (_) => onHover!(null),
+          child: Container(
+            height: expanded ? 220 : 140,
+            padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.dividerColor),
             ),
-          )),
-          const SizedBox(height: 4),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('${data.length} solve fa', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10)),
-            Text('più recente',             style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10)),
-          ]),
-        ]),
-      ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: CustomPaint(
+                painter: _ChartPainter(
+                  times: data.map((s) => s.effectiveMilliseconds).toList(),
+                  accent: accent,
+                  gridColor: theme.dividerColor,
+                ),
+              )),
+              const SizedBox(height: 4),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('${data.length} solve fa', style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10)),
+                Text('più recente',             style: theme.textTheme.bodyMedium?.copyWith(fontSize: 10)),
+              ]),
+            ]),
+          ),
+        );
+      },
     );
   }
 }
@@ -266,6 +271,9 @@ class _DeltaPanel extends StatelessWidget {
     final maxDelta  = deltas.reduce((a, b) => a > b ? a : b);
     final minDelta  = deltas.reduce((a, b) => a < b ? a : b);
     final improving = deltas.where((d) => d < 0).length;
+    final selectedDelta = hoveredIndex == null || hoveredIndex! <= 0 || hoveredIndex! >= valid.length
+        ? null
+        : valid[hoveredIndex!].effectiveMilliseconds - valid[hoveredIndex! - 1].effectiveMilliseconds;
 
 
     return Container(
@@ -284,6 +292,17 @@ class _DeltaPanel extends StatelessWidget {
           const SizedBox(width: 10),
           _DeltaStat('Pegg. Δ',  _fmtDelta(maxDelta), const Color(0xFFFF453A), theme),
         ]),
+        if (selectedDelta != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Delta selezionato: ${_fmtDelta(selectedDelta)}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontSize: 12,
+              color: selectedDelta < 0 ? const Color(0xFF30D158) : const Color(0xFFFF453A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         const SizedBox(height: 10),
         // Barra miglioramenti
         Row(children: [
