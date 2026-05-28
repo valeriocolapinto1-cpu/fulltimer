@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="speedcube_timer"
+        android:label="FullTimer"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
@@ -28,7 +28,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="speedcubetimer" android:host="wca-auth" />
+                <data android:scheme="fulltimer" android:host="wca-auth" />
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

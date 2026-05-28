@@ -26,5 +26,5 @@ Future<void> main() async {
     ChangeNotifierProvider.value(value: session),
     ChangeNotifierProvider.value(value: l10n),
     ChangeNotifierProvider(create: (_) => TimerProvider()),
-  ], child: const SpeedCubeApp()));
+  ], child: const FullTimerApp()));
 }

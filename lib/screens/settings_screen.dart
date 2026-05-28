@@ -101,7 +101,7 @@ class SettingsScreen extends StatelessWidget {
           // Info app
           Center(
             child: Text(
-              'SpeedCube Timer v1.0',
+              'FullTimer v2.0',
               style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
             ),
           ),

@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -34,7 +32,7 @@ class TimesScreen extends StatelessWidget {
             tooltip: 'Condividi',
             onPressed: session.solveCount == 0
                 ? null
-                : () => Share.share(session.buildShareText()),
+                : () => SharePlus.instance.share(ShareParams(text: session.buildShareText())),
           ),
         ],
       ),

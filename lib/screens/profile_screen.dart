@@ -3,7 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/event_type.dart';
+import '../models/solve_time.dart';
+import '../services/supabase_service.dart';
 import '../services/wca_auth_service.dart';
+import '../widgets/auth_dialog.dart';
 
 const _wcaCountries = [
   'Afghanistan',
@@ -95,10 +98,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileState extends State<ProfileScreen> {
   String _name = '', _wcaId = '', _country = '', _avatarEmoji = '👤';
-  String? _wcaAvatarUrl; // WCA profile picture URL
+  String? _wcaAvatarUrl;
   List<String> _favEvents = [], _learnedAlgs = [];
   bool _loading = true, _wcaLoading = false;
   final _wca = WcaAuthService();
+  final _sb = SupabaseService();
+  Map<String, int?> _pbs = {};
+  bool _pbLoading = false;
 
   static const _algSets = [
     'F2L Completo (41 casi)',
@@ -165,6 +171,7 @@ class _ProfileState extends State<ProfileScreen> {
       _learnedAlgs = p.getStringList('p_alg') ?? [];
       _loading = false;
     });
+    if (_sb.isLoggedIn) _loadPBs();
   }
 
   void _autofillFromWca(Map<String, dynamic> wp) {
@@ -174,6 +181,17 @@ class _ProfileState extends State<ProfileScreen> {
     // WCA avatar URL
     final avatar = wp['avatar'] as Map?;
     _wcaAvatarUrl = (avatar?['url'] as String?);
+  }
+
+  Future<void> _loadPBs() async {
+    setState(() => _pbLoading = true);
+    const events = ['3x3','2x2','4x4','5x5','oh','pyra','skewb','mega','clock','sq1'];
+    final results = <String, int?>{};
+    for (final e in events) {
+      final pb = await _sb.getPersonalBest(e);
+      results[e] = pb?['ao5'] as int?;
+    }
+    if (mounted) setState(() { _pbs = results; _pbLoading = false; });
   }
 
   Future<void> _save() async {
@@ -502,6 +520,9 @@ class _ProfileState extends State<ProfileScreen> {
           // ── WCA Connect Card ───────────────────────────
           _wcaCard(th, accent),
 
+          // ── Supabase Account Card ─────────────────────
+          _supabaseCard(th, accent),
+
           // ── Avatar + Name ──────────────────────────────
           Center(
               child: Column(children: [
@@ -619,6 +640,25 @@ class _ProfileState extends State<ProfileScreen> {
                         ])));
               }).toList()),
 
+          _sec('RECORD ONLINE', th),
+          if (_pbLoading)
+            const Padding(padding: EdgeInsets.all(8), child: Center(child: SizedBox(width:20,height:20,child:CircularProgressIndicator(strokeWidth:2))))
+          else ...[
+            const SizedBox(height:4),
+            Wrap(spacing:6, runSpacing:6, children:_pbs.entries.map((e) {
+              final t = e.value;
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal:10, vertical:6),
+                decoration:BoxDecoration(color:th.cardColor, borderRadius:BorderRadius.circular(10),
+                    border:Border.all(color:th.dividerColor)),
+                child: Row(mainAxisSize:MainAxisSize.min, children:[
+                  Text(e.key.toUpperCase(), style:TextStyle(fontSize:10, fontWeight:FontWeight.w600, color:accent)),
+                  const SizedBox(width:6),
+                  Text(t!=null ? SolveTime.format(t) : '-', style:const TextStyle(fontFamily:'monospace', fontSize:13, fontWeight:FontWeight.w700)),
+                ]));
+            }).toList()),
+          ],
+
           _sec('ALGORITMI APPRESI', th),
           const SizedBox(height: 4),
           ..._algSets.map((alg) {
@@ -669,6 +709,44 @@ class _ProfileState extends State<ProfileScreen> {
         ]),
       ),
     );
+  }
+
+  Widget _supabaseCard(ThemeData th, Color accent) {
+    final isAuth = _sb.isLoggedIn;
+    return GestureDetector(
+        onTap: isAuth ? null : () async {
+          final ok = await showDialog<bool>(context: context, builder: (_) => const AuthDialog());
+          if (ok == true && mounted) { setState(() {}); _loadPBs(); }
+        },
+        child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+                color: isAuth ? accent.withValues(alpha: 0.08) : th.cardColor,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: th.dividerColor)),
+            child: Row(children: [
+              Icon(isAuth ? Icons.account_circle : Icons.person_add_outlined,
+                  color: isAuth ? accent : th.colorScheme.onSurface.withValues(alpha: 0.5)),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(isAuth ? _sb.currentUser!.email ?? 'Account' : 'Account FullTimer',
+                    style: TextStyle(fontWeight: FontWeight.w700,
+                        color: isAuth ? accent : th.colorScheme.onSurface)),
+                Text(isAuth ? 'Dati sincronizzati sul cloud' : 'Registrati per salvare i risultati',
+                    style: th.textTheme.bodyMedium?.copyWith(fontSize: 11)),
+              ])),
+              if (isAuth)
+                TextButton(
+                    onPressed: () async {
+                      await _sb.signOut();
+                      setState(() { _pbs = {}; });
+                    },
+                    child: Text('Esci', style: TextStyle(color: th.colorScheme.error, fontSize: 12)))
+              else
+                Icon(Icons.chevron_right, size: 18, color: th.colorScheme.onSurface.withValues(alpha: 0.3)),
+            ])));
   }
 
   Widget _wcaCard(ThemeData th, Color accent) {

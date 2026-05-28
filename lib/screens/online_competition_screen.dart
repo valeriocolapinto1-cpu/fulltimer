@@ -25,8 +25,9 @@ class _OCState extends State<OnlineCompetitionScreen> {
   int _currentSolve = 0;
   bool _submitted = false;
   bool _loading = true;
+  String? _error;
   String _displayName = 'Anonimo';
-  int? _userRank; // user's position in leaderboard
+  int? _userRank;
 
   _CS _state = _CS.idle;
   int _elapsedMs = 0;
@@ -44,25 +45,30 @@ class _OCState extends State<OnlineCompetitionScreen> {
   Future<void> _init() async {
     final se = context.read<SessionProvider>();
     _displayName = se.activeSession?.name ?? 'Anonimo';
+    _sb.profileName = _displayName;
     await _loadCompetition();
   }
 
   Future<void> _loadCompetition() async {
-    setState(() { _loading = true; _submitted = false; _userRank = null; });
+    setState(() { _loading = true; _submitted = false; _userRank = null; _error = null; });
 
-    // Generate 5 scrambles asynchronously via tnoodle or fallback
-    final futures = List.generate(5, (_) => ScrambleService.generateFor(_eventId));
-    final results = await Future.wait(futures);
+    try {
+      final futures = List.generate(5, (_) => ScrambleService.generateFor(_eventId));
+      final results = await Future.wait(futures);
 
-    final lb = await _sb.getDailyLeaderboard(_eventId);
-    if (!mounted) return;
-    setState(() {
-      _scrambles = results;
-      _times = [null,null,null,null,null];
-      _currentSolve = 0;
-      _leaderboard = lb;
-      _loading = false;
-    });
+      final lb = await _sb.getDailyLeaderboard(_eventId);
+      if (!mounted) return;
+      setState(() {
+        _scrambles = results;
+        _times = [null,null,null,null,null];
+        _currentSolve = 0;
+        _leaderboard = lb;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() { _loading = false; _error = 'Errore caricamento: $e'; });
+    }
   }
 
   // ── Timer logic ───────────────────────────────────────────
@@ -114,7 +120,7 @@ class _OCState extends State<OnlineCompetitionScreen> {
     return th.colorScheme.onSurface;
   }
 
-  // ── Submit result and show leaderboard with user position ──
+  // ── Submit result and show leaderboard ───────────────────
 
   Future<void> _submit() async {
     final ao5 = _ao5;
@@ -130,10 +136,11 @@ class _OCState extends State<OnlineCompetitionScreen> {
 
     final lb = await _sb.getDailyLeaderboard(_eventId);
 
-    // Find user rank
+    // Find user rank by user_id (persistent across sessions)
+    final myId = _sb.effectiveUserId;
     int? rank;
     for (int i = 0; i < lb.length; i++) {
-      if (lb[i]['display_name'] == _displayName) { rank = i + 1; break; }
+      if (lb[i]['user_id'] == myId) { rank = i + 1; break; }
     }
 
     if (!mounted) return;
@@ -187,7 +194,16 @@ class _OCState extends State<OnlineCompetitionScreen> {
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Column(children: [
+          : _error != null
+              ? Center(child: Padding(padding: const EdgeInsets.all(24),
+                  child: Column(mainAxisSize:MainAxisSize.min, children:[
+                    Icon(Icons.cloud_off, size:48, color:th.colorScheme.error.withValues(alpha:0.5)),
+                    const SizedBox(height:12),
+                    Text(_error!, textAlign:TextAlign.center, style:TextStyle(color:th.colorScheme.error)),
+                    const SizedBox(height:16),
+                    FilledButton.tonal(onPressed:_loadCompetition, child:const Text('Riprova')),
+                  ])))
+              : Column(children: [
 
           // ── Scramble ────────────────────────────────────
           if (_currentSolve < 5)
@@ -329,7 +345,7 @@ class _LeaderboardSheet extends StatelessWidget {
           itemCount:leaderboard.length,
           itemBuilder:(_,i) {
             final r = leaderboard[i];
-            final isUser = r['display_name'] == userDisplayName;
+            final isUser = r['user_id'] == SupabaseService().effectiveUserId;
             final times = (r['times'] as List?)?.cast<int>() ?? [];
             final rankNum = i+1;
 

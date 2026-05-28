@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "speedcube_timer" "\0"
+            VALUE "FileDescription", "fulltimer" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "speedcube_timer" "\0"
+            VALUE "InternalName", "fulltimer" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "speedcube_timer.exe" "\0"
-            VALUE "ProductName", "speedcube_timer" "\0"
+            VALUE "OriginalFilename", "fulltimer.exe" "\0"
+            VALUE "ProductName", "fulltimer" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -1,4 +1,4 @@
-package com.example.speedcube_timer
+package com.example.fulltimer
 
 import io.flutter.embedding.android.FlutterActivity
 

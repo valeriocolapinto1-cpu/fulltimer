@@ -290,6 +290,7 @@ class _ManualInputState extends State<_ManualInput> {
           onRefresh: widget.session.newScramble,
           accentColor: widget.accent,
           eventId: widget.session.activeEventId,
+          showPreview: context.watch<SettingsProvider>().showScramblePreview,
         ),
         const Spacer(),
         Container(

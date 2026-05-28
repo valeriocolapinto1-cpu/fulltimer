@@ -12,14 +12,14 @@ import 'screens/algorithms_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/profile_screen.dart';
 
-class SpeedCubeApp extends StatelessWidget {
-  const SpeedCubeApp({super.key});
+class FullTimerApp extends StatelessWidget {
+  const FullTimerApp({super.key});
   @override
   Widget build(BuildContext context) {
     final s = context.watch<SettingsProvider>();
     final l = context.watch<L10n>();
     return MaterialApp(
-      title: 'SpeedCube Timer',
+      title: 'FullTimer',
       debugShowCheckedModeBanner: false,
       locale: Locale(l.lang),
       theme: AppTheme.build(dark: s.darkMode, accent: s.accentColor, fontFamily: s.fontFamily, transparent: s.useGradient),

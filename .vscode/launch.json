@@ -1,0 +1,44 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FullTimer (Windows)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "deviceId": "windows",
+      "args": [
+        "--dart-define=SUPABASE_URL=https://btammoapputkbnbbscej.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YW1tb2FwcHV0a2JuYmJzY2VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MzAzNjUsImV4cCI6MjA5MzMwNjM2NX0.UCkWgYTff54k9vFePlKD7ey-Nlzzvug36j8TMkXnsio",
+        "--dart-define=WCA_CLIENT_ID=",
+        "--dart-define=WCA_REDIRECT_URI=fulltimer://wca-auth"
+      ]
+    },
+    {
+      "name": "FullTimer (Android)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "deviceId": "emulator-5554",
+      "args": [
+        "--dart-define=SUPABASE_URL=https://btammoapputkbnbbscej.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YW1tb2FwcHV0a2JuYmJzY2VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MzAzNjUsImV4cCI6MjA5MzMwNjM2NX0.UCkWgYTff54k9vFePlKD7ey-Nlzzvug36j8TMkXnsio",
+        "--dart-define=WCA_CLIENT_ID=",
+        "--dart-define=WCA_REDIRECT_URI=fulltimer://wca-auth"
+      ]
+    },
+    {
+      "name": "FullTimer (Chrome)",
+      "type": "dart",
+      "request": "launch",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "args": [
+        "--dart-define=SUPABASE_URL=https://btammoapputkbnbbscej.supabase.co",
+        "--dart-define=SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YW1tb2FwcHV0a2JuYmJzY2VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc3MzAzNjUsImV4cCI6MjA5MzMwNjM2NX0.UCkWgYTff54k9vFePlKD7ey-Nlzzvug36j8TMkXnsio",
+        "--dart-define=WCA_CLIENT_ID=",
+        "--dart-define=WCA_REDIRECT_URI=fulltimer://wca-auth"
+      ]
+    }
+  ]
+}

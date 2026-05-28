@@ -1,5 +1,4 @@
 // widgets/stats_card.dart
-// ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
 import '../models/solve_time.dart';
@@ -35,10 +34,10 @@ class StatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: highlight ? accentColor.withOpacity(0.12) : theme.cardColor,
+        color: highlight ? accentColor.withValues(alpha: 0.12) : theme.cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: highlight ? accentColor.withOpacity(0.4) : theme.dividerColor,
+          color: highlight ? accentColor.withValues(alpha: 0.4) : theme.dividerColor,
           width: highlight ? 1.5 : 1,
         ),
       ),

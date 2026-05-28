@@ -1,10 +1,8 @@
 // widgets/timer_display.dart
 // Display principale del timer con animazioni di stato
 
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
-import 'package:speedcube_timer/providers/settings_provider.dart';
+import 'package:fulltimer/providers/settings_provider.dart';
 import '../models/solve_time.dart';
 import '../providers/timer_provider.dart';
 
@@ -94,7 +92,7 @@ class TimerDisplay extends StatelessWidget {
   Color _timerColor(ThemeData theme) {
     switch (state) {
       case TimerState.holding:
-        return theme.colorScheme.onSurface.withOpacity(0.4);
+        return theme.colorScheme.onSurface.withValues(alpha: 0.4);
       case TimerState.ready:
         return const Color(0xFF4CAF50);
       case TimerState.running:
@@ -171,7 +169,7 @@ class _InspectionDisplay extends StatelessWidget {
           'ISPEZIONE',
           style: theme.textTheme.labelSmall?.copyWith(
             letterSpacing: 4,
-            color: theme.colorScheme.onSurface.withOpacity(0.5),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
         const SizedBox(height: 8),

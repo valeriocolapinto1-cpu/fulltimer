@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
 
 class SupabaseService {
@@ -9,31 +11,59 @@ class SupabaseService {
 
   static SupabaseClient get client => Supabase.instance.client;
 
+  String _anonId = '';
+  String _profileName = '';
+
+  /// Called once at startup — ensures a persistent anonymous ID exists
   static Future<void> initialize() async {
-    if (!AppConfig.hasSupabaseConfig) {
-      throw StateError(
-        'Missing Supabase configuration. Pass SUPABASE_URL and SUPABASE_ANON_KEY with --dart-define.',
-      );
-    }
+    if (!AppConfig.hasSupabaseConfig) return;
     await Supabase.initialize(
       url: AppConfig.supabaseUrl,
       anonKey: AppConfig.supabaseAnonKey,
     );
+    await _i._ensureAnonId();
+  }
+
+  // ── Anonymous user ───────────────────────────────────────
+  Future<void> _ensureAnonId() async {
+    final p = await SharedPreferences.getInstance();
+    _anonId = p.getString('sb_anon_id') ?? '';
+    if (_anonId.isEmpty) {
+      _anonId = const Uuid().v4();
+      await p.setString('sb_anon_id', _anonId);
+    }
   }
 
   // ── Auth ─────────────────────────────────────────────────
   User? get currentUser => client.auth.currentUser;
   bool  get isLoggedIn  => currentUser != null;
   String? get uid       => currentUser?.id;
-  String get displayName => currentUser?.userMetadata?['display_name'] as String? ?? 'Anonimo';
+  String get effectiveUserId => uid ?? _anonId;
+
+  String get displayName =>
+      currentUser?.userMetadata?['display_name'] as String? ??
+      _profileName;
+
+  set profileName(String v) => _profileName = v;
+
+  Future<AuthResponse> signUp(String email, String password) =>
+      client.auth.signUp(email: email, password: password);
+
+  Future<AuthResponse> signIn(String email, String password) =>
+      client.auth.signInWithPassword(email: email, password: password);
 
   Future<void> signOut() async {
-    try { await client.auth.signOut(); } catch (e) { if (kDebugMode) print('[Supabase] signOut: $e'); }
+    try { await client.auth.signOut(); } catch (_) {}
   }
 
-  // ── Competition results ───────────────────────────────────
+  /// Update the authenticated user's metadata (no-op for anonymous)
+  Future<void> updateUserMeta(Map<String, dynamic> meta) async {
+    if (!isLoggedIn) return;
+    await client.auth.updateUser(UserAttributes(data: meta));
+  }
 
-  /// Submit an ao5 result for today's competition
+  // ── Competition results ──────────────────────────────────
+
   Future<bool> submitCompetitionResult({
     required String eventId,
     required List<int> times,
@@ -41,12 +71,11 @@ class SupabaseService {
     required String displayName,
   }) async {
     try {
-      final today = _todayStr();
       await client.from('competition_results').upsert({
-        'user_id':      uid ?? 'anonymous_${DateTime.now().millisecondsSinceEpoch}',
+        'user_id':      effectiveUserId,
         'display_name': displayName,
         'event_id':     eventId,
-        'date':         today,
+        'date':         _todayStr(),
         'times':        times,
         'ao5':          ao5,
         'submitted_at': DateTime.now().toIso8601String(),
@@ -58,15 +87,13 @@ class SupabaseService {
     }
   }
 
-  /// Get today's leaderboard for an event, ordered by ao5 ascending
   Future<List<Map<String, dynamic>>> getDailyLeaderboard(String eventId) async {
     try {
-      final today = _todayStr();
       final resp = await client
           .from('competition_results')
           .select()
           .eq('event_id', eventId)
-          .eq('date', today)
+          .eq('date', _todayStr())
           .order('ao5', ascending: true)
           .limit(100);
       return List<Map<String, dynamic>>.from(resp as List);
@@ -76,22 +103,34 @@ class SupabaseService {
     }
   }
 
-  /// Get all-time personal best for the current user
   Future<Map<String, dynamic>?> getPersonalBest(String eventId) async {
-    if (!isLoggedIn) return null;
     try {
-      final resp = await client
+      return await client
           .from('competition_results')
           .select()
-          .eq('user_id', uid!)
+          .eq('user_id', effectiveUserId)
           .eq('event_id', eventId)
           .order('ao5', ascending: true)
           .limit(1)
           .maybeSingle();
-      return resp;
     } catch (e) {
       if (kDebugMode) print('[Supabase] personalBest: $e');
       return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getMyResults({int limit = 50}) async {
+    try {
+      final resp = await client
+          .from('competition_results')
+          .select()
+          .eq('user_id', effectiveUserId)
+          .order('submitted_at', ascending: false)
+          .limit(limit);
+      return List<Map<String, dynamic>>.from(resp as List);
+    } catch (e) {
+      if (kDebugMode) print('[Supabase] myResults: $e');
+      return [];
     }
   }
 

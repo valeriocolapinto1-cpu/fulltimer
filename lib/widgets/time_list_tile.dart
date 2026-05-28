@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:provider/provider.dart';
@@ -186,7 +184,7 @@ class _Menu extends StatelessWidget {
         if (v == 'dnf') onDnf();
         if (v == 'fav') session.toggleFavorite(solve.id);
         if (v == 'delete') onDelete();
-        if (v == 'share') Share.share(session.buildSolveShareText(solve));
+        if (v == 'share') SharePlus.instance.share(ShareParams(text: session.buildSolveShareText(solve)));
         if (v == 'comment') _showCommentDialog(context, session);
       },
     );

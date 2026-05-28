@@ -1,6 +1,5 @@
-// ignore_for_file: duplicate_ignore, constant_identifier_names, unused_import
+// ignore_for_file: constant_identifier_names
 
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -1413,12 +1412,9 @@ class _OllPainter extends CustomPainter {
   final String ollStr; // 9 chars '0'/'1': top-left → bottom-right
   _OllPainter(this.ollStr);
 
-  // ignore: constant_identifier_names
-  static const _Y = Color(0xFFFFD500); // yellow = oriented
-  // ignore: constant_identifier_names
-  static const _Gy = Color(0xFF555555); // grey = needs flipping
-  // ignore: constant_identifier_names
-  static const _Or = Color(0xFFFF5800); // orange = unoriented edge sticker
+  static const _Y = Color(0xFFFFD500);
+  static const _Gy = Color(0xFF555555);
+  static const _Or = Color(0xFFFF5800);
 
   // Edge sticker orientation: which of the 4 edge pieces show yellow on top?
   // Derived from the OLL string bits 1(top),3(left),5(right),7(bottom)
