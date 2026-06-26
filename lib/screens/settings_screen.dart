@@ -44,19 +44,18 @@ class SettingsScreen extends StatelessWidget {
 
           _SettingsTile(
             title: 'Ispezione WCA',
-            subtitle: 'Countdown prima del timer',
+            subtitle: '15 secondi fissi (bloccato in modalità WCA)',
             trailing: Switch(
               value: settings.inspectionEnabled,
-              onChanged: settings.setInspectionEnabled,
+              onChanged: null,
             ),
           ),
 
           if (settings.inspectionEnabled)
             _SettingsTile(
               title: 'Durata ispezione',
-              subtitle: '${settings.inspectionDuration} secondi',
-              trailing: null,
-              onTap: () => _showInspectionDialog(context, settings),
+              subtitle: '${settings.inspectionDuration} secondi (WCA)',
+              trailing: const Icon(Icons.lock_outline),
             ),
 
           _SettingsTile(
@@ -106,49 +105,6 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  // ── Dialogs ───────────────────────────────────────────────
-
-  void _showInspectionDialog(BuildContext context, SettingsProvider settings) {
-    int value = settings.inspectionDuration;
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setState) => AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Durata ispezione'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('$value secondi',
-                  style: const TextStyle(
-                      fontSize: 32, fontWeight: FontWeight.w200)),
-              Slider(
-                value: value.toDouble(),
-                min: 5,
-                max: 30,
-                divisions: 25,
-                onChanged: (v) => setState(() => value = v.round()),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Annulla')),
-            TextButton(
-              onPressed: () {
-                settings.setInspectionDuration(value);
-                Navigator.pop(ctx);
-              },
-              child: const Text('Salva'),
-            ),
-          ],
-        ),
       ),
     );
   }

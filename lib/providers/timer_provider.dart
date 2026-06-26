@@ -8,6 +8,7 @@ class TimerProvider extends ChangeNotifier {
   TimerState _state = TimerState.idle;
   int  _elapsedMs = 0, _inspectionMs = 0, _inspectionLimit = 15000, _holdDurationMs = 550;
   bool _inspectionEnabled = true, _soundEnabled = true, _vibrationEnabled = true;
+  bool _lateInspectionPenalty = false;
   Timer? _timer, _holdTimer;
   DateTime? _startTime, _inspectionStart;
   Function(int)? onTimerStop;
@@ -18,11 +19,12 @@ class TimerProvider extends ChangeNotifier {
   bool get isInspectionWarning =>
       (_state == TimerState.inspection || _state == TimerState.holdingFromInspection || _state == TimerState.readyFromInspection)
       && inspectionSecondsLeft <= 3;
+  bool get lateInspectionPenalty => _lateInspectionPenalty;
 
   void configure({required bool inspectionEnabled, required int holdDurationMs,
       required int inspectionDuration, required bool soundEnabled, required bool vibrationEnabled}) {
-    _inspectionEnabled = inspectionEnabled; _holdDurationMs = holdDurationMs;
-    _inspectionLimit = inspectionDuration * 1000; _soundEnabled = soundEnabled;
+    _inspectionEnabled = true; _holdDurationMs = holdDurationMs;
+    _inspectionLimit = 15000; _soundEnabled = soundEnabled;
     _vibrationEnabled = vibrationEnabled;
   }
 
@@ -41,7 +43,7 @@ class TimerProvider extends ChangeNotifier {
       case TimerState.holding:               _cancelHold(); break;
       case TimerState.ready:                 _inspectionEnabled ? _startInspection() : _startTimer(); break;
       case TimerState.holdingFromInspection: _cancelHoldInspection(); break;
-      case TimerState.readyFromInspection:   _startTimer(); break;
+      case TimerState.readyFromInspection:   _startTimer(fromInspection: true); break;
       default: break;
     }
   }
@@ -87,9 +89,10 @@ class TimerProvider extends ChangeNotifier {
     });
   }
 
-  void _startTimer() {
+  void _startTimer({bool fromInspection = false}) {
     _timer?.cancel(); _holdTimer?.cancel();
     _state = TimerState.running; _elapsedMs = 0; _startTime = DateTime.now();
+    _lateInspectionPenalty = fromInspection && _inspectionMs > _inspectionLimit;
     if (_vibrationEnabled) HapticFeedback.lightImpact();
     _timer = Timer.periodic(const Duration(milliseconds: 10), (_) {
       _elapsedMs = DateTime.now().difference(_startTime!).inMilliseconds; notifyListeners();
@@ -106,7 +109,7 @@ class TimerProvider extends ChangeNotifier {
     onTimerStop?.call(_elapsedMs);
   }
 
-  void reset() { _timer?.cancel(); _holdTimer?.cancel(); _state = TimerState.idle; _elapsedMs = 0; _inspectionMs = 0; notifyListeners(); }
+  void reset() { _timer?.cancel(); _holdTimer?.cancel(); _state = TimerState.idle; _elapsedMs = 0; _inspectionMs = 0; _lateInspectionPenalty = false; notifyListeners(); }
 
   @override
   void dispose() { _timer?.cancel(); _holdTimer?.cancel(); super.dispose(); }

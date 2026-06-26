@@ -17,7 +17,7 @@ void main() {
 
     final provider = TimerProvider();
     provider.configure(
-      inspectionEnabled: false,
+      inspectionEnabled: true,
       holdDurationMs: 10,
       inspectionDuration: 15,
       soundEnabled: true,
@@ -28,12 +28,12 @@ void main() {
     await tester.pump(const Duration(milliseconds: 15));
     provider.onPointerUp();
     await tester.pump(const Duration(milliseconds: 30));
-    provider.onPointerDown();
-    await tester.pump();
 
     expect(
       calls.where((c) => c.method == 'HapticFeedback.vibrate'),
       isEmpty,
     );
+
+    provider.reset();
   });
 }

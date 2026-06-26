@@ -167,7 +167,7 @@ class _OCState extends State<OnlineCompetitionScreen> {
         userDisplayName: _displayName,
         userRank: _userRank,
         eventId: _eventId,
-        ao5: _ao5!,
+        ao5: _ao5,
       ));
   }
 
@@ -284,11 +284,11 @@ class _LeaderboardSheet extends StatelessWidget {
   final String userDisplayName;
   final int? userRank;
   final String eventId;
-  final int ao5;
+  final int? ao5;
 
   const _LeaderboardSheet({
     required this.leaderboard, required this.userDisplayName,
-    required this.userRank, required this.eventId, required this.ao5,
+    required this.userRank, required this.eventId, this.ao5,
   });
 
   @override
@@ -316,7 +316,7 @@ class _LeaderboardSheet extends StatelessWidget {
           ])),
 
         // User's result highlight
-        if (userRank!=null)
+        if (userRank != null && ao5 != null)
           Container(margin:const EdgeInsets.fromLTRB(16,0,16,8),
             padding:const EdgeInsets.all(12),
             decoration:BoxDecoration(
@@ -329,11 +329,12 @@ class _LeaderboardSheet extends StatelessWidget {
               const SizedBox(width:12),
               Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
                 Text('Il tuo risultato',style:TextStyle(fontSize:11,color:th.colorScheme.onSurface.withValues(alpha:0.6))),
-                Text(SolveTime.format(ao5),style:TextStyle(fontSize:18,fontWeight:FontWeight.w700,fontFamily:'monospace',color:accent)),
+                Text(SolveTime.format(ao5!),style:TextStyle(fontSize:18,fontWeight:FontWeight.w700,fontFamily:'monospace',color:accent)),
               ]),
               const Spacer(),
-              Text('Top ${((userRank!/leaderboard.length)*100).round()}%',
-                  style:TextStyle(color:accent,fontWeight:FontWeight.w600,fontSize:12)),
+              if (leaderboard.isNotEmpty)
+                Text('Top ${((userRank! / leaderboard.length) * 100).round()}%',
+                    style:TextStyle(color:accent,fontWeight:FontWeight.w600,fontSize:12)),
             ])),
 
         const Divider(height:1),

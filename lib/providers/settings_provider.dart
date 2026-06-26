@@ -74,8 +74,8 @@ class SettingsProvider extends ChangeNotifier {
     _g2         = Color(_prefs.getInt('g2')     ?? const Color(0xFF1a1a2e).toARGB32());
     _useGrad    = _prefs.getBool('useGrad')     ?? false;
     _bright     = _prefs.getDouble('bright')    ?? 1.0;
-    _inspection = _prefs.getBool('inspection')  ?? true;
-    _inspDur    = _prefs.getInt('inspDur')      ?? 15;
+    _inspection = true;
+    _inspDur    = 15;
     _sound      = _prefs.getBool('sound')       ?? true;
     _vibration  = _prefs.getBool('vibration')   ?? true;
     _hold       = _prefs.getInt('hold')         ?? 550;
@@ -85,6 +85,8 @@ class SettingsProvider extends ChangeNotifier {
     final rawIdx = _prefs.getInt('timerDisplay') ?? 0;
     _timerDisplay = TimerDisplayMode.values[rawIdx.clamp(0, TimerDisplayMode.values.length-1)];
     _showScramblePreview = _prefs.getBool('scramblePreview') ?? true;
+    await _prefs.setBool('inspection', true);
+    await _prefs.setInt('inspDur', 15);
     notifyListeners();
   }
 
@@ -96,8 +98,8 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> setGradientColor2(Color c)      => _set(() async { _g2=c;         await _prefs.setInt('g2',c.toARGB32()); });
   Future<void> setUseGradient(bool v)          => _set(() async { _useGrad=v;    await _prefs.setBool('useGrad',v); });
   Future<void> setGradientBrightness(double v) => _set(() async { _bright=v;     await _prefs.setDouble('bright',v); });
-  Future<void> setInspectionEnabled(bool v)    => _set(() async { _inspection=v; await _prefs.setBool('inspection',v); });
-  Future<void> setInspectionDuration(int s)    => _set(() async { _inspDur=s;    await _prefs.setInt('inspDur',s); });
+  Future<void> setInspectionEnabled(bool v)    => _set(() async { _inspection=true; await _prefs.setBool('inspection',true); });
+  Future<void> setInspectionDuration(int s)    => _set(() async { _inspDur=15;    await _prefs.setInt('inspDur',15); });
   Future<void> setSoundEnabled(bool v)         => _set(() async { _sound=v;      await _prefs.setBool('sound',v); });
   Future<void> setVibrationEnabled(bool v)     => _set(() async { _vibration=v;  await _prefs.setBool('vibration',v); });
   Future<void> setHoldDuration(int ms)         => _set(() async { _hold=ms;      await _prefs.setInt('hold',ms); });

@@ -7,6 +7,7 @@ import '../models/solve_time.dart';
 import '../services/supabase_service.dart';
 import '../services/wca_auth_service.dart';
 import '../widgets/auth_dialog.dart';
+import '../widgets/spinning_cube.dart';
 
 const _wcaCountries = [
   'Afghanistan',
@@ -194,16 +195,30 @@ class _ProfileState extends State<ProfileScreen> {
     if (mounted) setState(() { _pbs = results; _pbLoading = false; });
   }
 
+  String _sanitizeText(String v, {int maxLen = 40}) {
+    var s = v.trim();
+    s = s.replaceAll(RegExp(r'[\x00-\x1F\x7F<>"''&]'), '');
+    if (s.length > maxLen) s = s.substring(0, maxLen);
+    return s;
+  }
+
+  String _sanitizeWcaId(String v) {
+    var s = v.trim().toUpperCase();
+    s = s.replaceAll(RegExp(r'[^A-Z0-9]'), '');
+    if (s.length > 20) s = s.substring(0, 20);
+    return s;
+  }
+
   Future<void> _save() async {
     final p = await SharedPreferences.getInstance();
     await Future.wait([
-      p.setString('p_name', _name),
-      p.setString('p_wca', _wcaId),
-      p.setString('p_country', _country),
+      p.setString('p_name', _sanitizeText(_name)),
+      p.setString('p_wca', _sanitizeWcaId(_wcaId)),
+      p.setString('p_country', _sanitizeText(_country)),
       p.setString('p_avatar', _avatarEmoji),
       if (_wcaAvatarUrl != null) p.setString('p_wca_avatar', _wcaAvatarUrl!),
-      p.setStringList('p_fav', _favEvents),
-      p.setStringList('p_alg', _learnedAlgs),
+      p.setStringList('p_fav', _favEvents.map((e) => _sanitizeText(e, maxLen:20)).toList()),
+      p.setStringList('p_alg', _learnedAlgs.map((e) => _sanitizeText(e, maxLen:100)).toList()),
     ]);
   }
 
@@ -565,7 +580,7 @@ class _ProfileState extends State<ProfileScreen> {
             const SizedBox(height: 10),
             GestureDetector(
                 onTap: () =>
-                    _editText('Nome', _name, (v) => setState(() => _name = v)),
+                    _editText('Nome', _name, (v) => setState(() => _name = _sanitizeText(v))),
                 child: Text(_name.isEmpty ? 'Inserisci nome' : _name,
                     style: TextStyle(
                         fontSize: 22,
@@ -595,7 +610,7 @@ class _ProfileState extends State<ProfileScreen> {
               'WCA ID',
               _wcaId.isEmpty ? 'Non impostato' : _wcaId,
               () => _editText('WCA ID (es. 2015MARC01)', _wcaId,
-                  (v) => setState(() => _wcaId = v))),
+                  (v) => setState(() => _wcaId = _sanitizeWcaId(v)))),
           _tile(th, Icons.flag_outlined, 'Paese',
               _country.isEmpty ? 'Seleziona paese' : _country, _pickCountry),
 
@@ -629,7 +644,11 @@ class _ProfileState extends State<ProfileScreen> {
                                 color: isFav ? accent : th.dividerColor,
                                 width: isFav ? 1.5 : 1)),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Text(e.emoji, style: const TextStyle(fontSize: 16)),
+                          SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: eventCube(e.id, size: 18),
+                          ),
                           const SizedBox(width: 6),
                           Text(e.name,
                               style: TextStyle(

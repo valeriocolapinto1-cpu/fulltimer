@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../models/solve_time.dart';
 import '../models/event_type.dart';
+import '../widgets/spinning_cube.dart';
 
 class StatsCard extends StatelessWidget {
   final String label;
@@ -111,15 +112,26 @@ class EventSelector extends StatelessWidget {
                   color: isActive ? accentColor : theme.dividerColor,
                 ),
               ),
-              child: Text(
-                '${event.emoji} ${event.name}',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  color: isActive
-                      ? _contrastColor(accentColor)
-                      : theme.colorScheme.onSurface,
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    event.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: isActive
+                          ? _contrastColor(accentColor)
+                          : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: eventCube(event.id, size: 18),
+                  ),
+                ],
               ),
             ),
           );

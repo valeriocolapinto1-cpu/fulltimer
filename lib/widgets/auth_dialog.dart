@@ -18,18 +18,23 @@ class _AuthState extends State<AuthDialog> {
   @override void dispose() { _email.dispose(); _pass.dispose(); super.dispose(); }
 
   Future<void> _submit() async {
+    final email = _email.text.trim();
+    final pass = _pass.text;
+    if (email.isEmpty) { setState(() => _error = 'Inserisci un indirizzo email.'); return; }
+    if (pass.length < 6) { setState(() => _error = 'La password deve essere di almeno 6 caratteri.'); return; }
+
     setState(() { _loading = true; _error = null; });
     try {
       if (_signUp) {
-        await SupabaseService().signUp(_email.text.trim(), _pass.text);
+        await SupabaseService().signUp(email, pass);
       } else {
-        await SupabaseService().signIn(_email.text.trim(), _pass.text);
+        await SupabaseService().signIn(email, pass);
       }
       if (mounted) Navigator.pop(context, true);
-    } on AuthException catch (e) {
-      setState(() => _error = e.message);
-    } catch (e) {
-      setState(() => _error = '$e');
+    } on AuthException {
+      setState(() => _error = 'Email o password non validi. Riprova.');
+    } catch (_) {
+      setState(() => _error = 'Errore di connessione. Controlla la rete e riprova.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }

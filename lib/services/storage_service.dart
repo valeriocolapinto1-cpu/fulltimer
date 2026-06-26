@@ -60,7 +60,4 @@ class StorageService {
     await _prefs.setString(_customEventsKey, encoded);
   }
 
-  // ── Reset ─────────────────────────────────────────────────
-
-  Future<void> clearAll() async => _prefs.clear();
 }

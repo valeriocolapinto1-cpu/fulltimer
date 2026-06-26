@@ -97,7 +97,10 @@ class SessionProvider extends ChangeNotifier {
 
   void updateSolveComment(String id, String comment) {
     final s = _find(id); if (s == null) return;
-    s.comment = comment; _storage.saveSessions(_sessions); notifyListeners();
+    var c = comment.trim();
+    c = c.replaceAll(RegExp(r'[\x00-\x1F\x7F]'), '');
+    if (c.length > 500) c = c.substring(0, 500);
+    s.comment = c; _storage.saveSessions(_sessions); notifyListeners();
   }
 
   void toggleFavorite(String id) {
@@ -130,15 +133,33 @@ class SessionProvider extends ChangeNotifier {
 
   void resetCurrentSession() { _activeSession?.solves.clear(); _storage.saveSessions(_sessions); notifyListeners(); }
 
+  String _sanitizeEventName(String name) {
+    var s = name.trim();
+    if (s.isEmpty) return 'Evento';
+    s = s.replaceAll(RegExp(r'[\x00-\x1F\x7F<>"''&]'), '');
+    if (s.length > 40) s = s.substring(0, 40);
+    return s;
+  }
+
+  String _sanitizeEmoji(String emoji) {
+    // Allow only emoji characters (unicode Symbols and Pictographs ranges)
+    var s = emoji.trim();
+    if (s.isEmpty) return '🧩';
+    if (s.length > 4) s = s.substring(0, 4);
+    return s;
+  }
+
   void addCustomEvent(String name, String emoji) {
-    _customEvents.add(EventType(id: _uuid.v4(), name: name, emoji: emoji, isCustom: true));
+    _customEvents.add(EventType(id: _uuid.v4(),
+        name: _sanitizeEventName(name), emoji: _sanitizeEmoji(emoji), isCustom: true));
     _storage.saveCustomEvents(_customEvents); notifyListeners();
   }
 
   void editCustomEvent(String id, String name, String emoji) {
     final idx = _customEvents.indexWhere((e) => e.id == id);
     if (idx < 0) return;
-    _customEvents[idx] = EventType(id: id, name: name, emoji: emoji, isCustom: true);
+    _customEvents[idx] = EventType(id: id,
+        name: _sanitizeEventName(name), emoji: _sanitizeEmoji(emoji), isCustom: true);
     _storage.saveCustomEvents(_customEvents); notifyListeners();
   }
 

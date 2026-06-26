@@ -19,8 +19,8 @@ const _wcaColors = <String, List<Color>>{
   '5x5': [_W, _R, _G, _Y, _O, _B],
   '6x6': [_W, _R, _G, _Y, _O, _B],
   '7x7': [_W, _R, _G, _Y, _O, _B],
-  'sq1': [_W, _R, _G, _Y, _O, _B],
 };
+
 
 Widget eventCube(String eventId, {double size = 26}) {
   if (eventId == 'mega')
@@ -31,6 +31,8 @@ Widget eventCube(String eventId, {double size = 26}) {
     return _ClockSpinner(key: ValueKey('clock_$size'), size: size);
   if (eventId == 'skewb')
     return _SkewbSpinner(key: ValueKey('skewb_$size'), size: size);
+  if (eventId == 'sq1')
+    return _Sq1Spinner(key: ValueKey('sq1_$size'), size: size);
   final cols = _wcaColors[eventId] ?? _wcaColors['3x3']!;
   final n = _gridN(eventId);
   return _CubeSpinner(
@@ -554,4 +556,107 @@ class _ClockPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ClockPainter o) => o.t != t;
+}
+
+// ── Square-1: cube shape with middle band ─────────────────────
+class _Sq1Spinner extends StatefulWidget {
+  final double size;
+  const _Sq1Spinner({super.key, required this.size});
+  @override
+  State<_Sq1Spinner> createState() => _Sq1SpinnerState();
+}
+
+class _Sq1SpinnerState extends State<_Sq1Spinner>
+    with SingleTickerProviderStateMixin, SpinMixin {
+  @override
+  int get spinSeconds => 7;
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+      animation: spinCtrl,
+      builder: (_, __) => SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: CustomPaint(painter: _Sq1Painter(spinCtrl.value * 2 * pi))));
+}
+
+class _Sq1Painter extends CustomPainter {
+  final double a;
+  _Sq1Painter(this.a);
+
+  Offset _p(double x, double y, double z, double s, double cx, double cy) {
+    final ca = cos(a), sa = sin(a), rx = x * ca - z * sa, rz = x * sa + z * ca;
+    return Offset(
+        rx * cos(0.42) * s + cx, (-y * 0.88 - rz * sin(0.33)) * s + cy);
+  }
+
+  bool _front(List<Offset> pts) {
+    final v1 = pts[1] - pts[0], v2 = pts[2] - pts[0];
+    return v1.dx * v2.dy - v1.dy * v2.dx < 0;
+  }
+
+  void _quad(Canvas cv, List<Offset> pts, Color col) {
+    if (!_front(pts)) return;
+    final path = Path()..moveTo(pts[0].dx, pts[0].dy);
+    for (final p in pts.skip(1)) path.lineTo(p.dx, p.dy);
+    path.close();
+    cv.drawPath(path, Paint()..color = col);
+    cv.drawPath(
+        path,
+        Paint()
+          ..color = _K.withValues(alpha: 0.45)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.7);
+  }
+
+  @override
+  void paint(Canvas cv, Size sz) {
+    final s = sz.width * 0.37, cx = sz.width / 2, cy = sz.height * 0.54;
+    final v = [
+      _p(-1, 1, -1, s, cx, cy),
+      _p(1, 1, -1, s, cx, cy),
+      _p(1, -1, -1, s, cx, cy),
+      _p(-1, -1, -1, s, cx, cy),
+      _p(-1, 1, 1, s, cx, cy),
+      _p(1, 1, 1, s, cx, cy),
+      _p(1, -1, 1, s, cx, cy),
+      _p(-1, -1, 1, s, cx, cy),
+    ];
+    // Top, Front, Right, Bottom, Back, Left — with middle band on sides
+    final faces = [
+      ([v[4], v[5], v[1], v[0]], _W),
+      ([v[0], v[1], v[2], v[3]], _R),
+      ([v[1], v[5], v[6], v[2]], _G),
+      ([v[3], v[2], v[6], v[7]], _Y),
+      ([v[5], v[4], v[7], v[6]], _O),
+      ([v[4], v[0], v[3], v[7]], _B),
+    ];
+    faces.sort((a, b) {
+      final da = a.$1.map((p) => p.dy).reduce((x, y) => x + y);
+      final db = b.$1.map((p) => p.dy).reduce((x, y) => x + y);
+      return db.compareTo(da);
+    });
+    for (final f in faces) {
+      _quad(cv, f.$1, f.$2);
+    }
+    // Draw middle band on side faces
+    final bandY = 0.22;
+    for (final f in faces) {
+      final pts = f.$1;
+      if (pts.length < 4) continue;
+      final ml = Offset.lerp(pts[0], pts[3], bandY)!;
+      final mr = Offset.lerp(pts[1], pts[2], bandY)!;
+      final path = Path()
+        ..moveTo(ml.dx, ml.dy)
+        ..lineTo(mr.dx, mr.dy);
+      cv.drawPath(
+          path,
+          Paint()
+            ..color = _K
+            ..strokeWidth = sz.width * 0.035
+            ..strokeCap = StrokeCap.round);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_Sq1Painter o) => o.a != a;
 }

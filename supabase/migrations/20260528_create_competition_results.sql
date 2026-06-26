@@ -23,10 +23,16 @@ create index if not exists idx_comp_user
 -- 3. Row Level Security
 alter table competition_results enable row level security;
 
--- Allow anonymous and authenticated users to insert their own rows
-create policy "Anyone can insert their own results"
+-- Allow anonymous and authenticated users to insert their own rows only
+create policy "Users can insert their own results"
   on competition_results for insert
-  with check (true);
+  with check (
+    user_id = coalesce(
+      current_setting('request.jwt.claims', true)::json->>'sub',
+      current_setting('request.jwt.claims', true)::json->>'anon_id',
+      ''
+    )
+  );
 
 -- Allow everyone to read all results (for leaderboard)
 create policy "Anyone can read results"

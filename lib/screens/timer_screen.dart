@@ -40,7 +40,10 @@ class _TimerScreenState extends State<TimerScreen> {
       if (!mounted) return;
       final se = context.read<SessionProvider>();
       if (ms > 0) {
-        se.addSolve(ms);
+        final solve = se.addSolve(ms);
+        if (timer.lateInspectionPenalty) {
+          se.updateSolveResult(solve.id, SolveResult.plusTwo);
+        }
         _snack(ms);
       } else if (ms == -2) {
         final sv = se.addSolve(0);
